@@ -1,0 +1,96 @@
+name: Production Build (APK & IPA)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    name: 🤖 Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: ☕ Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 📱 Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: 📦 Install dependencies
+        run: npm install
+
+      - name: 🏗️ Expo Prebuild Android
+        run: npx expo prebuild --platform android --clean
+
+      - name: 🔨 Compile Android APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: 📤 Upload Android APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: champibad-android-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+  build-ios:
+    name: 🍏 Build iOS IPA (Unsigned for Sideloading)
+    runs-on: macos-14
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm install
+
+      - name: 🏗️ Expo Prebuild iOS
+        run: npx expo prebuild --platform ios --clean
+
+      - name: 🔨 Compile Unsigned iOS App & Package IPA
+        run: |
+          cd ios
+          xcodebuild -workspace Champibad.xcworkspace \
+            -scheme Champibad \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            clean build
+
+          mkdir -p Payload
+          cp -r build/Build/Products/Release-iphoneos/Champibad.app Payload/
+          zip -r ../Champibad-unsigned.ipa Payload
+          cd ..
+
+      - name: 📤 Upload iOS IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: champibad-ios-unsigned-ipa
+          path: Champibad-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14

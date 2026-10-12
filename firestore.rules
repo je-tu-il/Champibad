@@ -1,0 +1,77 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isUser(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email == 'reymond_aurelien@yahoo.fr' ||
+        get(/databases/$(database)/documents/players/$(request.auth.uid)).data.role == 'ADMIN'
+      );
+    }
+
+    // Profils Joueurs
+    match /players/{playerId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isUser(playerId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Licenciés du club Champipaf (synchro API)
+    match /licensees/{licenseId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Matchs & Défis
+    match /matches/{matchId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        request.auth.uid == resource.data.player1Id ||
+        request.auth.uid == resource.data.player2Id ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Messagerie privée E2EE (Vie privée first)
+    match /messages/{messageId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.senderId ||
+        request.auth.uid == resource.data.recipientId
+      );
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.senderId;
+      allow update, delete: if isAuthenticated() && (
+        request.auth.uid == resource.data.senderId ||
+        isAdmin()
+      );
+    }
+
+    // Paramètres administratifs & Créneaux de badminton
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /slots/{slotId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Snapshots quotidiens
+    match /snapshots/{snapshotId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+  }
+}

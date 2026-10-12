@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "172205690175",
+    "project_id": "champibad-cf772",
+    "storage_bucket": "champibad-cf772.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:172205690175:android:3a41c06776b858cea9978a",
+        "android_client_info": {
+          "package_name": "com.pixelthings.champibad"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAwrxSgniXsbbSFzvKrhgNJe2Czf6S_-ME"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
