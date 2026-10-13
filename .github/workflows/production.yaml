@@ -63,10 +63,10 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: 🛠️ Select Xcode 16
+      - name: 🛠️ Select Xcode 15.2
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '16.0'
+          xcode-version: '15.2.0'
 
       - name: 🔍 Verify Xcode version
         run: xcodebuild -version
@@ -81,10 +81,8 @@ jobs:
       - name: 🏗️ Expo Prebuild iOS
         run: npx expo prebuild --platform ios --clean --no-install
 
-      - name: 🩹 Patch Podfile Xcode Version Check
-        run: |
-          sed -i '' 's/raise "Please upgrade XCode."/puts "Bypassing Xcode check"/g' ios/Podfile || true
-          sed -i '' 's/raise "Please upgrade Xcode."/puts "Bypassing Xcode check"/g' ios/Podfile || true
+      - name: 🩹 Patch React Native CocoaPods Xcode Check
+        run: node scripts/patch-xcode-check.js
 
       - name: 📦 Install Pods & Generate Workspace
         working-directory: ios
