@@ -22,8 +22,8 @@ export const MatchCard: React.FC<Props> = ({
   const p1 = allPlayers.find((p) => p.id === match.player1Id);
   const p2 = allPlayers.find((p) => p.id === match.player2Id);
 
-  const p1Name = p1 ? `${p1.firstName} ${p1.lastName}` : 'Joueur 1';
-  const p2Name = p2 ? `${p2.firstName} ${p2.lastName}` : 'Joueur 2';
+  const p1Name = p1?.firstName || 'Joueur 1';
+  const p2Name = p2?.firstName || 'Joueur 2';
 
   const isUserP1 = currentUser.id === match.player1Id;
   const isUserP2 = currentUser.id === match.player2Id;
@@ -38,32 +38,29 @@ export const MatchCard: React.FC<Props> = ({
     (match.status === 'ACCEPTED' || match.status === 'PROPOSED') &&
     isParticipant;
 
-  // Statut text & color
-  let statusText = 'Défi proposé';
-  let statusBg = '#64748B';
+  // Statut dot & label
+  let statusText = 'Proposé';
+  let statusDotColor = '#64748B';
 
   if (match.status === 'VALIDATED') {
-    statusText = 'Validé (Elo calculé)';
-    statusBg = '#16A34A';
+    statusText = 'Validé';
+    statusDotColor = '#16A34A';
   } else if (match.status === 'PENDING_VALIDATION') {
-    statusText = 'En attente de confirmation';
-    statusBg = '#EA580C';
+    statusText = 'En attente';
+    statusDotColor = '#EA580C';
   } else if (match.status === 'CONTESTED') {
-    statusText = 'Contesté (En litige)';
-    statusBg = '#DC2626';
+    statusText = 'Contesté';
+    statusDotColor = '#DC2626';
   }
+
+  const slotDay = match.scheduledDate || match.scheduledTime;
 
   return (
     <View style={styles.card}>
-      {/* Top Header : Mode & Statut */}
+      {/* Top Header : Statut */}
       <View style={styles.topRow}>
-        <View style={styles.modeBadge}>
-          <Text style={styles.modeText}>
-            {match.mode === 'SOLO' ? '🏸 Simple 1v1' : '🏸 Double 2v2'}
-          </Text>
-        </View>
-
-        <View style={[styles.statusBadge, { backgroundColor: statusBg }]}>
+        <View style={styles.statusBadge}>
+          <View style={[styles.statusDot, { backgroundColor: statusDotColor }]} />
           <Text style={styles.statusText}>{statusText}</Text>
         </View>
       </View>
@@ -74,9 +71,6 @@ export const MatchCard: React.FC<Props> = ({
         <View style={[styles.playerCol, match.winnerId === match.player1Id && styles.winnerCol]}>
           <Text style={styles.playerName} numberOfLines={1}>
             {p1Name}
-          </Text>
-          <Text style={styles.playerSub}>
-            {p1 ? `${p1.eloSolo} Elo` : ''}
           </Text>
           {match.eloDeltaPlayer1 !== undefined && (
             <Text
@@ -116,9 +110,6 @@ export const MatchCard: React.FC<Props> = ({
           <Text style={styles.playerName} numberOfLines={1}>
             {p2Name}
           </Text>
-          <Text style={styles.playerSub}>
-            {p2 ? `${p2.eloSolo} Elo` : ''}
-          </Text>
           {match.eloDeltaPlayer2 !== undefined && (
             <Text
               style={[
@@ -132,34 +123,23 @@ export const MatchCard: React.FC<Props> = ({
         </View>
       </View>
 
-      {/* Handicap appliqué si grand écart d'Elo */}
-      {match.handicapApplied !== 'NONE' && (
-        <View style={styles.handicapBadge}>
-          <Text style={styles.handicapText}>
-            ⚖️ Handicap : {match.handicapDetails || match.handicapApplied}
-          </Text>
-        </View>
-      )}
-
       {/* Créneau prévu */}
-      {match.scheduledTime && (
-        <Text style={styles.slotInfo}>
-          🕒 Créneau : {match.scheduledDate || 'Séance'} à {match.scheduledTime}
-        </Text>
-      )}
+      {slotDay ? (
+        <Text style={styles.slotInfo}>📅 {slotDay}</Text>
+      ) : null}
 
       {/* Actions de validation */}
       {needsValidationFromUser && (
         <View style={styles.actionsContainer}>
           <Text style={styles.actionPrompt}>
-            L'adversaire a soumis ce résultat. Confirmez-vous ?
+            Confirmer ce résultat ?
           </Text>
           <View style={styles.buttonsRow}>
             <TouchableOpacity
               style={styles.validateButton}
               onPress={() => onValidate && onValidate(match.id)}
             >
-              <Text style={styles.validateButtonText}>✓ Confirmer & Valider Elo</Text>
+              <Text style={styles.validateButtonText}>✓ Confirmer</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -178,7 +158,7 @@ export const MatchCard: React.FC<Props> = ({
           style={styles.submitScoreButton}
           onPress={() => onSubmitScores && onSubmitScores(match)}
         >
-          <Text style={styles.submitScoreText}>📝 Déclarer le score du match</Text>
+          <Text style={styles.submitScoreText}>📝 Score</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -188,43 +168,37 @@ export const MatchCard: React.FC<Props> = ({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 12,
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 8,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowRadius: 3,
     elevation: 2,
   },
   topRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    marginBottom: 12,
-  },
-  modeBadge: {
-    backgroundColor: '#F1F5F9',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  modeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#334155',
+    marginBottom: 6,
   },
   statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   statusText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#64748B',
   },
   playersRow: {
     flexDirection: 'row',
@@ -234,8 +208,9 @@ const styles = StyleSheet.create({
   playerCol: {
     flex: 1,
     alignItems: 'center',
-    padding: 6,
-    borderRadius: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    borderRadius: 6,
   },
   winnerCol: {
     backgroundColor: '#F0FDF4',
@@ -246,41 +221,36 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     textAlign: 'center',
   },
-  playerSub: {
-    fontSize: 11,
-    color: '#64748B',
-    marginTop: 2,
-  },
   eloDelta: {
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '700',
     marginTop: 2,
   },
   scoreCol: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     alignItems: 'center',
   },
   vsText: {
-    fontSize: 14,
-    fontWeight: '900',
+    fontSize: 13,
+    fontWeight: '800',
     color: '#94A3B8',
   },
   setsList: {
-    gap: 4,
+    gap: 3,
     alignItems: 'center',
   },
   setRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#0F172A',
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 6,
-    gap: 4,
+    borderRadius: 4,
+    gap: 3,
   },
   setText: {
     color: '#F8FAFC',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
   boldScore: {
@@ -289,20 +259,7 @@ const styles = StyleSheet.create({
   },
   setDivider: {
     color: '#64748B',
-    fontSize: 10,
-  },
-  handicapBadge: {
-    backgroundColor: '#FEF3C7',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    marginTop: 10,
-  },
-  handicapText: {
-    color: '#B45309',
-    fontSize: 11,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontSize: 9,
   },
   slotInfo: {
     fontSize: 11,
@@ -311,27 +268,27 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   actionsContainer: {
-    marginTop: 12,
-    paddingTop: 10,
+    marginTop: 8,
+    paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
   },
   actionPrompt: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#334155',
     fontWeight: '600',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   buttonsRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
   },
   validateButton: {
     flex: 2,
     backgroundColor: '#16A34A',
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingVertical: 7,
+    borderRadius: 6,
     alignItems: 'center',
   },
   validateButtonText: {
@@ -342,8 +299,8 @@ const styles = StyleSheet.create({
   contestButton: {
     flex: 1,
     backgroundColor: '#FEE2E2',
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingVertical: 7,
+    borderRadius: 6,
     alignItems: 'center',
   },
   contestButtonText: {
@@ -353,10 +310,10 @@ const styles = StyleSheet.create({
   },
   submitScoreButton: {
     backgroundColor: '#0284C7',
-    paddingVertical: 9,
-    borderRadius: 8,
+    paddingVertical: 7,
+    borderRadius: 6,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 8,
   },
   submitScoreText: {
     color: '#FFFFFF',

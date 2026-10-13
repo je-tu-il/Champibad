@@ -21,7 +21,6 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [licenseNumber, setLicenseNumber] = useState('');
-  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleRegisterOrLogin = async () => {
@@ -32,12 +31,12 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
 
     setLoading(true);
     try {
-      const userEmail = email.trim() || `${firstName.toLowerCase()}.${lastName.toLowerCase()}@champibad.fr`;
+      const email = `${firstName.trim().toLowerCase()}.${lastName.trim().toLowerCase()}@champibad.fr`;
       const player = await AuthService.registerOrLogin(
         firstName.trim(),
         lastName.trim(),
         licenseNumber.trim(),
-        userEmail
+        email
       );
       Alert.alert('Connexion réussie', `Bienvenue ${player.firstName} !`);
       onLoginSuccess(player);
@@ -48,7 +47,6 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
     }
   };
 
-  // Connexion rapide pour les tests (Admin ou Joueur)
   const handleQuickLogin = async (prefill: {
     first: string;
     last: string;
@@ -76,17 +74,11 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
       <View style={styles.header}>
         <Text style={styles.logo}>🏸</Text>
         <Text style={styles.title}>CHAMPIBAD</Text>
-        <Text style={styles.badge}>Club Champibad • Champigneulles</Text>
-        <Text style={styles.desc}>
-          Plateforme officielle de compétition interne et de classement Elo.
-        </Text>
+        <Text style={styles.desc}>Classement interne du club</Text>
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Vérification du Licencié</Text>
-        <Text style={styles.cardSubtitle}>
-          Pour garantir que seuls les membres du club accèdent aux classements, indiquez vos identifiants FFBaD.
-        </Text>
+        <Text style={styles.cardTitle}>Connexion</Text>
 
         <Text style={styles.inputLabel}>Prénom</Text>
         <TextInput
@@ -106,7 +98,7 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
           onChangeText={setLastName}
         />
 
-        <Text style={styles.inputLabel}>Numéro de Licence</Text>
+        <Text style={styles.inputLabel}>N° Licence</Text>
         <TextInput
           style={styles.input}
           placeholder="ex: 07123456"
@@ -114,17 +106,6 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
           value={licenseNumber}
           onChangeText={setLicenseNumber}
           keyboardType="numeric"
-        />
-
-        <Text style={styles.inputLabel}>Adresse Email (optionnelle)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="ex: reymond_aurelien@yahoo.fr"
-          placeholderTextColor="#94A3B8"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
         />
 
         <TouchableOpacity
@@ -135,46 +116,42 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
           {loading ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
-            <Text style={styles.primaryButtonText}>Valider et Entrer</Text>
+            <Text style={styles.primaryButtonText}>Valider</Text>
           )}
         </TouchableOpacity>
       </View>
 
-      {/* Raccourcis de test immédiat */}
       <View style={styles.quickLoginContainer}>
-        <Text style={styles.quickLoginTitle}>🚀 Connexion rapide de test :</Text>
+        <Text style={styles.quickLoginTitle}>Connexion rapide</Text>
+        <View style={styles.quickRow}>
+          <TouchableOpacity
+            style={styles.quickBtn}
+            onPress={() =>
+              handleQuickLogin({
+                first: 'Aurélien',
+                last: 'Reymond',
+                license: '07123456',
+                email: SUPER_ADMIN_EMAIL,
+              })
+            }
+          >
+            <Text style={styles.quickBtnText}>🛡️ Admin</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.quickAdminBtn}
-          onPress={() =>
-            handleQuickLogin({
-              first: 'Aurélien',
-              last: 'Reymond',
-              license: '07123456',
-              email: SUPER_ADMIN_EMAIL,
-            })
-          }
-        >
-          <Text style={styles.quickAdminText}>
-            🛡️ Se connecter en tant que Super Admin (Aurélien Reymond)
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.quickPlayerBtn}
-          onPress={() =>
-            handleQuickLogin({
-              first: 'Thomas',
-              last: 'Dubois',
-              license: '07234567',
-              email: 'thomas.dubois@badminton-champigneulles.fr',
-            })
-          }
-        >
-          <Text style={styles.quickPlayerText}>
-            👤 Se connecter en Joueur (Thomas Dubois)
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickBtn}
+            onPress={() =>
+              handleQuickLogin({
+                first: 'Thomas',
+                last: 'Dubois',
+                license: '07234567',
+                email: 'thomas.dubois@badminton-champigneulles.fr',
+              })
+            }
+          >
+            <Text style={styles.quickBtnText}>👤 Joueur</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </ScrollView>
   );
@@ -201,22 +178,11 @@ const styles = StyleSheet.create({
     color: '#38BDF8',
     letterSpacing: 1,
   },
-  badge: {
-    backgroundColor: '#0284C7',
-    color: '#F0F9FF',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 8,
-    fontSize: 11,
-    fontWeight: '700',
-    marginTop: 6,
-  },
   desc: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#94A3B8',
     textAlign: 'center',
-    marginTop: 8,
-    maxWidth: 280,
+    marginTop: 6,
   },
   card: {
     backgroundColor: '#1E293B',
@@ -229,20 +195,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
     color: '#F8FAFC',
-    marginBottom: 4,
-  },
-  cardSubtitle: {
-    fontSize: 12,
-    color: '#94A3B8',
-    marginBottom: 16,
-    lineHeight: 16,
+    marginBottom: 12,
   },
   inputLabel: {
     fontSize: 12,
     fontWeight: '700',
     color: '#CBD5E1',
     marginBottom: 4,
-    marginTop: 8,
+    marginTop: 10,
   },
   input: {
     backgroundColor: '#0F172A',
@@ -275,39 +235,25 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   quickLoginTitle: {
-    color: '#94A3B8',
-    fontSize: 12,
-    fontWeight: '700',
-    marginBottom: 4,
+    color: '#64748B',
+    fontSize: 11,
+    fontWeight: '600',
   },
-  quickAdminBtn: {
-    backgroundColor: '#7F1D1D',
-    borderWidth: 1,
-    borderColor: '#DC2626',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    width: '100%',
-    alignItems: 'center',
+  quickRow: {
+    flexDirection: 'row',
+    gap: 12,
   },
-  quickAdminText: {
-    color: '#FEF2F2',
-    fontWeight: '700',
-    fontSize: 12,
-  },
-  quickPlayerBtn: {
+  quickBtn: {
     backgroundColor: '#1E293B',
     borderWidth: 1,
-    borderColor: '#475569',
-    paddingVertical: 10,
+    borderColor: '#334155',
+    paddingVertical: 8,
     paddingHorizontal: 16,
-    borderRadius: 10,
-    width: '100%',
-    alignItems: 'center',
+    borderRadius: 8,
   },
-  quickPlayerText: {
-    color: '#E2E8F0',
-    fontWeight: '600',
+  quickBtnText: {
+    color: '#94A3B8',
     fontSize: 12,
+    fontWeight: '600',
   },
 });

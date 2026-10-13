@@ -86,60 +86,52 @@ export const SlotsScreen: React.FC<Props> = ({ currentUser }) => {
     await SlotService.savePlayerAvailability(updated);
   };
 
+  const formatTime = (time?: string) => {
+    if (!time) return '';
+    return time.replace(':00', 'h').replace(':', 'h');
+  };
+
   return (
     <ScrollView
       style={styles.container}
       refreshControl={<RefreshControl refreshing={loading} onRefresh={loadData} />}
     >
-      {/* Créneaux du Club */}
-      <Text style={styles.sectionTitle}>🏸 Créneaux Officiels de Champigneulles</Text>
-      <Text style={styles.sectionSubtitle}>
-        Horaires d'ouverture de la salle et règles d'affluence configurées par l'administrateur.
-      </Text>
-
       {clubSlots.map((slot) => {
         const isRecurringChecked = availability?.recurringDays.includes(slot.dayOfWeek);
 
         return (
           <View key={slot.id} style={styles.slotCard}>
-            <View style={styles.slotHeader}>
-              <View>
-                <Text style={styles.slotDay}>{slot.dayName} • {slot.label}</Text>
-                <Text style={styles.slotHours}>
-                  ⏰ {slot.startTime} - {slot.endTime}
+            <View style={styles.slotRow}>
+              <View style={styles.slotInfo}>
+                <Text style={styles.slotTitle}>
+                  {slot.dayName} • {formatTime(slot.startTime)}-{formatTime(slot.endTime)}
                 </Text>
                 <Text style={styles.slotGym}>{slot.gymnasium}</Text>
               </View>
 
               <TouchableOpacity
                 style={[
-                  styles.toggleDayBtn,
-                  isRecurringChecked && styles.toggleDayBtnActive,
+                  styles.toggleBtn,
+                  isRecurringChecked && styles.toggleBtnActive,
                 ]}
                 onPress={() => handleToggleRecurringDay(slot.dayOfWeek)}
               >
                 <Text
                   style={[
-                    styles.toggleDayText,
-                    isRecurringChecked && styles.toggleDayTextActive,
+                    styles.toggleText,
+                    isRecurringChecked && styles.toggleTextActive,
                   ]}
                 >
-                  {isRecurringChecked ? '✓ Je suis dispo' : '+ M\'ajouter'}
+                  {isRecurringChecked ? '✓ Dispo' : '+ Dispo'}
                 </Text>
               </TouchableOpacity>
             </View>
 
-            {/* Subtilité forte affluence demandée */}
             {slot.hasPeakHours && (
-              <View style={styles.peakBox}>
-                <Text style={styles.peakIcon}>⚠️</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.peakTitle}>Règle de forte affluence :</Text>
-                  <Text style={styles.peakDesc}>
-                    {slot.peakRestrictionMessage ||
-                      `Matchs autorisés uniquement de ${slot.allowedMatchStartTime} à ${slot.allowedMatchEndTime}`}
-                  </Text>
-                </View>
+              <View style={styles.peakRow}>
+                <Text style={styles.peakText}>
+                  ⚠️ Matchs après {slot.allowedMatchStartTime ? formatTime(slot.allowedMatchStartTime) : '21h'}
+                </Text>
               </View>
             )}
           </View>
@@ -148,10 +140,7 @@ export const SlotsScreen: React.FC<Props> = ({ currentUser }) => {
 
       {/* Mes Exceptions d'indisponibilité */}
       <View style={styles.exceptionCard}>
-        <Text style={styles.cardTitle}>📅 Mes Absences Exceptionnelles</Text>
-        <Text style={styles.cardDesc}>
-          Vous êtes habituellement présent le jeudi mais pas ce jeudi-là ? Notez vos dates d'absence pour que l'app ne vous propose pas de match.
-        </Text>
+        <Text style={styles.cardTitle}>📅 Absences</Text>
 
         <View style={styles.inputRow}>
           <TextInput
@@ -170,15 +159,18 @@ export const SlotsScreen: React.FC<Props> = ({ currentUser }) => {
           <View style={styles.chipsContainer}>
             {availability.exceptionsUnavailable.map((dateStr, idx) => (
               <View key={idx} style={styles.dateChip}>
-                <Text style={styles.dateChipText}>Indisponible : {dateStr}</Text>
-                <TouchableOpacity onPress={() => handleRemoveException(dateStr)}>
+                <Text style={styles.dateChipText}>{dateStr}</Text>
+                <TouchableOpacity
+                  onPress={() => handleRemoveException(dateStr)}
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                >
                   <Text style={styles.chipClose}>✕</Text>
                 </TouchableOpacity>
               </View>
             ))}
           </View>
         ) : (
-          <Text style={styles.noExceptions}>Aucune absence exceptionnelle enregistrée.</Text>
+          <Text style={styles.noExceptions}>Aucune absence enregistrée.</Text>
         )}
       </View>
     </ScrollView>
@@ -191,116 +183,85 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
     padding: 16,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 4,
-  },
-  sectionSubtitle: {
-    fontSize: 12,
-    color: '#64748B',
-    marginBottom: 16,
-    lineHeight: 16,
-  },
   slotCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 12,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
-  slotHeader: {
+  slotRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  slotDay: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#0F172A',
+  slotInfo: {
+    flex: 1,
+    marginRight: 10,
   },
-  slotHours: {
-    fontSize: 12,
+  slotTitle: {
+    fontSize: 14,
     fontWeight: '700',
-    color: '#0284C7',
-    marginTop: 2,
+    color: '#0F172A',
   },
   slotGym: {
     fontSize: 11,
     color: '#64748B',
     marginTop: 2,
   },
-  toggleDayBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+  toggleBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 8,
     backgroundColor: '#F1F5F9',
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderColor: '#E2E8F0',
   },
-  toggleDayBtnActive: {
+  toggleBtnActive: {
     backgroundColor: '#DCFCE7',
     borderColor: '#86EFAC',
   },
-  toggleDayText: {
+  toggleText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#475569',
+    color: '#64748B',
   },
-  toggleDayTextActive: {
-    color: '#166534',
+  toggleTextActive: {
+    color: '#15803D',
   },
-  peakBox: {
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FECACA',
-    borderRadius: 8,
-    padding: 10,
-    marginTop: 10,
+  peakRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
   },
-  peakIcon: {
-    fontSize: 16,
-  },
-  peakTitle: {
+  peakText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: '#991B1B',
-  },
-  peakDesc: {
-    fontSize: 11,
-    color: '#B91C1C',
-    marginTop: 1,
+    color: '#D97706',
+    fontWeight: '500',
   },
   exceptionCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 16,
-    marginTop: 8,
-    marginBottom: 30,
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 6,
+    marginBottom: 24,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
   cardTitle: {
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '700',
     color: '#0F172A',
-    marginBottom: 4,
-  },
-  cardDesc: {
-    fontSize: 11,
-    color: '#64748B',
-    marginBottom: 12,
-    lineHeight: 16,
+    marginBottom: 10,
   },
   inputRow: {
     flexDirection: 'row',
     gap: 8,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   dateInput: {
     flex: 1,
@@ -308,20 +269,21 @@ const styles = StyleSheet.create({
     borderColor: '#CBD5E1',
     borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 13,
+    paddingVertical: 7,
+    fontSize: 12,
     backgroundColor: '#F8FAFC',
+    color: '#0F172A',
   },
   addExceptionBtn: {
     backgroundColor: '#0284C7',
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     borderRadius: 8,
     justifyContent: 'center',
   },
   addExceptionText: {
     color: '#FFFFFF',
     fontWeight: '700',
-    fontSize: 12,
+    fontSize: 11,
   },
   chipsContainer: {
     flexDirection: 'row',
@@ -331,8 +293,8 @@ const styles = StyleSheet.create({
   dateChip: {
     backgroundColor: '#FEE2E2',
     paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingVertical: 5,
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -344,8 +306,8 @@ const styles = StyleSheet.create({
   },
   chipClose: {
     color: '#DC2626',
-    fontWeight: '800',
-    fontSize: 12,
+    fontWeight: '700',
+    fontSize: 11,
   },
   noExceptions: {
     fontSize: 11,

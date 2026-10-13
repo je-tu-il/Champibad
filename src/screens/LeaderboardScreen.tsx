@@ -9,13 +9,19 @@ import {
 } from 'react-native';
 import { Player, GameMode } from '../types';
 import { AuthService } from '../services/authService';
-import { StatsService } from '../services/statsService';
-import { EloBadge } from '../components/EloBadge';
 
 interface Props {
   currentUser: Player;
   onChallengePlayer: (player: Player, mode: GameMode) => void;
 }
+
+const getEloColor = (elo: number): string => {
+  if (elo >= 1500) return '#DC2626';
+  if (elo >= 1400) return '#EA580C';
+  if (elo >= 1300) return '#2563EB';
+  if (elo >= 1200) return '#16A34A';
+  return '#64748B';
+};
 
 export const LeaderboardScreen: React.FC<Props> = ({ currentUser, onChallengePlayer }) => {
   const [mode, setMode] = useState<GameMode>('SOLO');
@@ -37,49 +43,29 @@ export const LeaderboardScreen: React.FC<Props> = ({ currentUser, onChallengePla
     mode === 'SOLO' ? b.eloSolo - a.eloSolo : b.eloDouble - a.eloDouble
   );
 
-  const renderBadgeIcon = (badge: string) => {
-    switch (badge) {
-      case 'CHAMPION':
-        return '👑';
-      case 'BOSSEUR':
-        return '🔨';
-      case 'PERSEVERANT':
-        return '🛡️';
-      case 'REMONTEE':
-        return '🚀';
-      default:
-        return '🏅';
-    }
-  };
-
   return (
     <View style={styles.container}>
-      {/* Sélecteur de mode Solo / Double */}
+      {/* Sélecteur de mode 1v1 / 2v2 */}
       <View style={styles.modeTabs}>
         <TouchableOpacity
           style={[styles.tab, mode === 'SOLO' && styles.activeTab]}
           onPress={() => setMode('SOLO')}
+          activeOpacity={0.7}
         >
           <Text style={[styles.tabText, mode === 'SOLO' && styles.activeTabText]}>
-            🏸 Simple (1 contre 1)
+            1v1
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.tab, mode === 'DOUBLE' && styles.activeTab]}
           onPress={() => setMode('DOUBLE')}
+          activeOpacity={0.7}
         >
           <Text style={[styles.tabText, mode === 'DOUBLE' && styles.activeTabText]}>
-            👥 Double (2 contre 2)
+            2v2
           </Text>
         </TouchableOpacity>
-      </View>
-
-      {/* Bannière stats & snapshot */}
-      <View style={styles.snapshotBanner}>
-        <Text style={styles.snapshotText}>
-          ⚡ Classement officiel actualisé quotidiennement à minuit
-        </Text>
       </View>
 
       {/* Liste des joueurs */}
@@ -96,9 +82,6 @@ export const LeaderboardScreen: React.FC<Props> = ({ currentUser, onChallengePla
             mode === 'SOLO' ? item.previousDayEloSolo : item.previousDayEloDouble;
           const eloDelta = prevElo ? currentElo - prevElo : 0;
 
-          // Badges dynamiques
-          const badges = StatsService.evaluateBadges(item);
-
           return (
             <View
               style={[
@@ -107,7 +90,7 @@ export const LeaderboardScreen: React.FC<Props> = ({ currentUser, onChallengePla
                 rank === 1 && styles.firstRankCard,
               ]}
             >
-              {/* Rang */}
+              {/* Rang & Delta */}
               <View style={styles.rankBox}>
                 <Text style={[styles.rankNumber, rank <= 3 && styles.topRankNumber]}>
                   {rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`}
@@ -119,7 +102,7 @@ export const LeaderboardScreen: React.FC<Props> = ({ currentUser, onChallengePla
                       { color: eloDelta > 0 ? '#16A34A' : '#DC2626' },
                     ]}
                   >
-                    {eloDelta > 0 ? `+${eloDelta}` : eloDelta}
+                    {eloDelta > 0 ? `+${eloDelta}` : `${eloDelta}`}
                   </Text>
                 )}
               </View>
@@ -127,36 +110,25 @@ export const LeaderboardScreen: React.FC<Props> = ({ currentUser, onChallengePla
               {/* Infos joueur */}
               <View style={styles.playerInfo}>
                 <View style={styles.nameRow}>
-                  <Text style={styles.playerName}>
+                  <Text style={styles.playerName} numberOfLines={1}>
                     {item.firstName} {item.lastName}
                   </Text>
                   {isCurrentUser && <Text style={styles.youBadge}>(Vous)</Text>}
                 </View>
-
-                {/* Badges de stats fun demandés par le user */}
-                <View style={styles.badgesRow}>
-                  {badges.map((b, i) => (
-                    <View key={i} style={styles.badgePill}>
-                      <Text style={styles.badgeText}>
-                        {renderBadgeIcon(b)} {b}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-
-                <Text style={styles.statsSummary}>
-                  {item.matchesPlayed} matchs • {item.matchesWon}V / {item.matchesLost}D • {item.threeSetMatches} batailles en 3 sets
-                </Text>
               </View>
 
-              {/* Badge Elo & Action */}
-              <View style={styles.actionCol}>
-                <EloBadge elo={currentElo} size="small" />
+              {/* Elo */}
+              <Text style={[styles.eloText, { color: getEloColor(currentElo) }]}>
+                {currentElo}
+              </Text>
 
+              {/* Action Défier */}
+              <View style={styles.actionBox}>
                 {!isCurrentUser && (
                   <TouchableOpacity
                     style={styles.challengeBtn}
                     onPress={() => onChallengePlayer(item, mode)}
+                    activeOpacity={0.7}
                   >
                     <Text style={styles.challengeBtnText}>Défier</Text>
                   </TouchableOpacity>
@@ -194,33 +166,21 @@ const styles = StyleSheet.create({
   },
   tabText: {
     color: '#94A3B8',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
   activeTabText: {
     color: '#FFFFFF',
-  },
-  snapshotBanner: {
-    backgroundColor: '#E0F2FE',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#BAE6FD',
-  },
-  snapshotText: {
-    fontSize: 11,
-    color: '#0369A1',
-    fontWeight: '600',
   },
   listContent: {
     padding: 12,
   },
   playerCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 6,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
@@ -241,7 +201,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   rankBox: {
-    width: 44,
+    width: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -256,7 +216,7 @@ const styles = StyleSheet.create({
   rankDelta: {
     fontSize: 10,
     fontWeight: '700',
-    marginTop: 2,
+    marginTop: 1,
   },
   playerInfo: {
     flex: 1,
@@ -271,58 +231,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#0F172A',
+    flexShrink: 1,
   },
   youBadge: {
     fontSize: 11,
     fontWeight: '700',
     color: '#0284C7',
   },
-  badgesRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-    marginTop: 4,
-    marginBottom: 4,
+  eloText: {
+    fontSize: 15,
+    fontWeight: '800',
+    textAlign: 'right',
+    minWidth: 42,
+    marginRight: 8,
   },
-  badgePill: {
-    backgroundColor: '#FEF3C7',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  badgeText: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: '#92400E',
-  },
-  cashBadge: {
-    backgroundColor: '#DCFCE7',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  cashBadgeText: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: '#166534',
-  },
-  statsSummary: {
-    fontSize: 10,
-    color: '#64748B',
-  },
-  actionCol: {
+  actionBox: {
+    width: 54,
     alignItems: 'flex-end',
-    gap: 6,
+    justifyContent: 'center',
   },
   challengeBtn: {
     backgroundColor: '#0284C7',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 6,
   },
   challengeBtnText: {
     color: '#FFFFFF',
     fontWeight: '700',
-    fontSize: 11,
+    fontSize: 10,
   },
 });

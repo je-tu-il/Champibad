@@ -178,28 +178,12 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.headerBox}>
-        <Text style={styles.headerTitle}>🛡️ Administration Champibad</Text>
-        <Text style={styles.headerSubtitle}>
-          Connecté en tant que responsable : {settings.adminEmail}
-        </Text>
-      </View>
-
-      {/* Guide où renseigner les joueurs */}
-      <View style={styles.infoBanner}>
-        <Text style={styles.infoBannerTitle}>💡 Où renseigner la liste des joueurs ?</Text>
-        <Text style={styles.infoBannerText}>
-          • <Text style={styles.boldText}>Option 1 (Direct)</Text> : Utilisez le formulaire ci-dessous pour ajouter des joueurs en 1 clic.{'\n'}
-          • <Text style={styles.boldText}>Option 2 (Fichier)</Text> : Éditez la liste dans le code : <Text style={styles.codeText}>src/services/licenseService.ts</Text> ({'MOCK_CHAMPIBAD_LICENSEES'}).{'\n'}
-          • <Text style={styles.boldText}>Option 3 (API FFBaD)</Text> : Renseignez l'URL de votre API club ci-dessous pour une synchro automatique.
-        </Text>
+        <Text style={styles.headerTitle}>🛡️ Admin</Text>
       </View>
 
       {/* 1. Formulaire d'ajout rapide d'un joueur */}
       <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>➕ Ajouter un Joueur / Licencié</Text>
-        <Text style={styles.sectionDesc}>
-          Renseignez le prénom, le nom et le numéro de licence pour autoriser l'accès au club.
-        </Text>
+        <Text style={styles.sectionTitle}>➕ Ajouter un joueur</Text>
 
         <View style={styles.formRow}>
           <View style={styles.inputCol}>
@@ -250,37 +234,27 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
         </View>
 
         <TouchableOpacity style={styles.addPlayerBtn} onPress={handleAddPlayer}>
-          <Text style={styles.addPlayerText}>➕ Enregistrer ce joueur dans le club</Text>
+          <Text style={styles.addPlayerText}>+ Ajouter</Text>
         </TouchableOpacity>
       </View>
 
       {/* 2. Liste des Joueurs existants */}
       <View style={styles.sectionCard}>
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>👥 Joueurs Inscrits au Club</Text>
+          <Text style={styles.sectionTitle}>👥 Joueurs inscrits</Text>
           <View style={styles.countBadge}>
-            <Text style={styles.countText}>{players.length} joueurs</Text>
+            <Text style={styles.countText}>{players.length}</Text>
           </View>
         </View>
-        <Text style={styles.sectionDesc}>
-          Liste de tous les compétiteurs enregistrés dans les classements de Champibad.
-        </Text>
 
         {players.map((p) => (
           <View key={p.id} style={styles.playerRow}>
-            <View style={{ flex: 1 }}>
-              <View style={styles.playerNameRow}>
+            <View style={styles.playerInfo}>
+              <Text style={styles.playerText} numberOfLines={1}>
                 <Text style={styles.playerRowName}>
                   {p.firstName} {p.lastName}
                 </Text>
-                {p.role === 'ADMIN' && (
-                  <View style={styles.adminMiniPill}>
-                    <Text style={styles.adminMiniText}>ADMIN</Text>
-                  </View>
-                )}
-              </View>
-              <Text style={styles.playerRowDetails}>
-                Licence : {p.licenseNumber} • Elo 1v1 : {p.eloSolo} • Elo 2v2 : {p.eloDouble}
+                <Text style={styles.playerLicense}> • Licence : {p.licenseNumber}</Text>
               </Text>
             </View>
 
@@ -298,20 +272,17 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
 
       {/* 3. Règles d'Écart de Niveau & Handicaps */}
       <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>⚖️ Règles d'Écart de Niveau & Handicaps</Text>
-        <Text style={styles.sectionDesc}>
-          Équilibrez les matchs amicaux entre compétiteurs de classements différents.
-        </Text>
+        <Text style={styles.sectionTitle}>⚖️ Handicap</Text>
 
         <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>Mode Handicap activé :</Text>
+          <Text style={styles.switchLabel}>Mode Handicap activé</Text>
           <Switch
             value={settings.handicapModeEnabled}
             onValueChange={(val) => setSettings({ ...settings, handicapModeEnabled: val })}
           />
         </View>
 
-        <Text style={styles.inputLabel}>Seuil d'écart d'Elo max recommandé :</Text>
+        <Text style={styles.inputLabel}>Seuil d'écart d'Elo max recommandé</Text>
         <TextInput
           style={styles.input}
           keyboardType="numeric"
@@ -321,7 +292,7 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
           }
         />
 
-        <Text style={styles.inputLabel}>Points de pénalité de départ (-X pts) :</Text>
+        <Text style={[styles.inputLabel, styles.inputLabelSpacing]}>Points de pénalité de départ (-X pts)</Text>
         <TextInput
           style={styles.input}
           keyboardType="numeric"
@@ -334,12 +305,9 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
 
       {/* 4. Synchronisation API des licenciés */}
       <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>🔄 Synchronisation API / Webhook</Text>
-        <Text style={styles.sectionDesc}>
-          Optionnel : connectez l'API officielle ou un webhook JSON pour synchroniser automatiquement les adhérents.
-        </Text>
+        <Text style={styles.sectionTitle}>🔄 Synchronisation API</Text>
 
-        <Text style={styles.inputLabel}>URL de l'API / Webhook du club :</Text>
+        <Text style={styles.inputLabel}>URL de l'API / Webhook du club</Text>
         <TextInput
           style={styles.input}
           value={settings.licenseApiUrl}
@@ -355,22 +323,19 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
           onPress={handleTriggerApiSync}
         >
           {syncingApi ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color="#FFFFFF" size="small" />
           ) : (
-            <Text style={styles.syncBtnText}>🔄 Lancer la synchronisation API</Text>
+            <Text style={styles.syncBtnText}>🔄 Synchroniser</Text>
           )}
         </TouchableOpacity>
       </View>
 
       {/* 5. Clôture de saison */}
       <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>🏆 Clôture de Saison</Text>
-        <Text style={styles.sectionDesc}>
-          Permet de figer le palmarès annuel et démarrer une nouvelle saison de compétition.
-        </Text>
+        <Text style={styles.sectionTitle}>🏆 Clôture de saison</Text>
 
         <TouchableOpacity style={styles.archiveBtn} onPress={handleArchiveSeason}>
-          <Text style={styles.archiveBtnText}>Clôturer la Saison en cours</Text>
+          <Text style={styles.archiveBtnText}>Clôturer la saison en cours</Text>
         </TouchableOpacity>
       </View>
 
@@ -404,46 +369,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#0F172A',
     borderRadius: 14,
     padding: 16,
-    marginBottom: 14,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: '#334155',
   },
   headerTitle: {
     color: '#38BDF8',
-    fontSize: 17,
-    fontWeight: '900',
-  },
-  headerSubtitle: {
-    color: '#94A3B8',
-    fontSize: 11,
-    marginTop: 3,
-  },
-  infoBanner: {
-    backgroundColor: '#EFF6FF',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
-  },
-  infoBannerTitle: {
-    color: '#1D4ED8',
+    fontSize: 18,
     fontWeight: '800',
-    fontSize: 13,
-    marginBottom: 6,
-  },
-  infoBannerText: {
-    color: '#1E3A8A',
-    fontSize: 11,
-    lineHeight: 18,
-  },
-  boldText: {
-    fontWeight: '700',
-  },
-  codeText: {
-    fontFamily: 'monospace',
-    fontWeight: '700',
-    backgroundColor: '#DBEAFE',
   },
   sectionCard: {
     backgroundColor: '#FFFFFF',
@@ -457,29 +390,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 12,
   },
   sectionTitle: {
     fontSize: 15,
     fontWeight: '800',
     color: '#0F172A',
-    marginBottom: 4,
+    marginBottom: 12,
   },
   countBadge: {
     backgroundColor: '#E0F2FE',
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 2,
     borderRadius: 10,
   },
   countText: {
     color: '#0369A1',
     fontWeight: '800',
     fontSize: 11,
-  },
-  sectionDesc: {
-    fontSize: 11,
-    color: '#64748B',
-    marginBottom: 14,
-    lineHeight: 16,
   },
   formRow: {
     flexDirection: 'row',
@@ -495,6 +423,9 @@ const styles = StyleSheet.create({
     color: '#475569',
     marginBottom: 5,
   },
+  inputLabelSpacing: {
+    marginTop: 10,
+  },
   input: {
     backgroundColor: '#F8FAFC',
     borderWidth: 1,
@@ -507,10 +438,10 @@ const styles = StyleSheet.create({
   },
   addPlayerBtn: {
     backgroundColor: '#0284C7',
-    paddingVertical: 12,
-    borderRadius: 10,
+    paddingVertical: 11,
+    borderRadius: 8,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 6,
   },
   addPlayerText: {
     color: '#FFFFFF',
@@ -525,31 +456,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
   },
-  playerNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+  playerInfo: {
+    flex: 1,
+    marginRight: 10,
+  },
+  playerText: {
+    fontSize: 13,
   },
   playerRowName: {
-    fontSize: 13,
     fontWeight: '700',
     color: '#0F172A',
   },
-  adminMiniPill: {
-    backgroundColor: '#DC2626',
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: 4,
-  },
-  adminMiniText: {
-    color: '#FFFFFF',
-    fontSize: 8,
-    fontWeight: '800',
-  },
-  playerRowDetails: {
-    fontSize: 11,
+  playerLicense: {
     color: '#64748B',
-    marginTop: 2,
   },
   deleteBtn: {
     backgroundColor: '#FEE2E2',
@@ -566,10 +485,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 6,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   switchLabel: {
     fontSize: 12,
@@ -578,8 +497,8 @@ const styles = StyleSheet.create({
   },
   syncBtn: {
     backgroundColor: '#0F172A',
-    paddingVertical: 12,
-    borderRadius: 10,
+    paddingVertical: 11,
+    borderRadius: 8,
     alignItems: 'center',
     marginTop: 10,
   },
@@ -593,7 +512,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FECACA',
     paddingVertical: 11,
-    borderRadius: 10,
+    borderRadius: 8,
     alignItems: 'center',
   },
   archiveBtnText: {
@@ -603,10 +522,10 @@ const styles = StyleSheet.create({
   },
   saveAllBtn: {
     backgroundColor: '#16A34A',
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: 13,
+    borderRadius: 10,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 6,
   },
   saveAllText: {
     color: '#FFFFFF',

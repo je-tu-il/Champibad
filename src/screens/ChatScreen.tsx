@@ -57,7 +57,6 @@ export const ChatScreen: React.FC<Props> = ({ currentUser, onUserUpdated }) => {
   const handleSendMessage = async () => {
     if (!inputText.trim() || !activePartnerId) return;
 
-    const partner = allPlayers.find((p) => p.id === activePartnerId);
     if (currentUser.blockedUsers.includes(activePartnerId)) {
       Alert.alert('Utilisateur bloqué', 'Vous avez bloqué cet utilisateur.');
       return;
@@ -125,44 +124,32 @@ export const ChatScreen: React.FC<Props> = ({ currentUser, onUserUpdated }) => {
         </ScrollView>
       </View>
 
-      {/* Barre d'action de sécurité et social */}
+      {/* En-tête partenaire simplifié */}
       {activePartner && (
         <View style={styles.partnerHeader}>
-          <View>
-            <Text style={styles.partnerTitle}>
-              {activePartner.firstName} {activePartner.lastName}
-            </Text>
-            <Text style={styles.partnerElo}>🏸 {activePartner.eloSolo} Elo Solo</Text>
-          </View>
+          <Text style={styles.partnerTitle}>
+            {activePartner.firstName}
+          </Text>
 
           <View style={styles.partnerActions}>
             <TouchableOpacity
-              style={[styles.socialBtn, isFriend && styles.socialBtnActive]}
+              style={[styles.iconBtn, isFriend && styles.iconBtnActive]}
               onPress={handleToggleFriend}
             >
-              <Text style={styles.socialBtnText}>
-                {isFriend ? '★ Ami' : '+ Ami'}
+              <Text style={[styles.starIcon, isFriend && styles.starIconActive]}>
+                {isFriend ? '★' : '☆'}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.socialBtn, isBlocked && styles.blockBtnActive]}
+              style={[styles.iconBtn, isBlocked && styles.blockBtnActive]}
               onPress={handleToggleBlock}
             >
-              <Text style={[styles.socialBtnText, isBlocked && styles.blockTextActive]}>
-                {isBlocked ? 'Débloquer' : 'Bloquer'}
-              </Text>
+              <Text style={styles.blockIcon}>🚫</Text>
             </TouchableOpacity>
           </View>
         </View>
       )}
-
-      {/* Tag de vie privée E2EE */}
-      <View style={styles.e2eeBanner}>
-        <Text style={styles.e2eeText}>
-          🔒 Chiffrement de bout en bout (E2EE) • Seuls vous et votre adversaire pouvez lire ces messages
-        </Text>
-      </View>
 
       {/* Messages */}
       <FlatList
@@ -197,7 +184,7 @@ export const ChatScreen: React.FC<Props> = ({ currentUser, onUserUpdated }) => {
         }}
       />
 
-      {/* Saisie de message */}
+      {/* Saisie de message compacte */}
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.messageInput}
@@ -262,50 +249,38 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E2E8F0',
   },
   partnerTitle: {
-    fontSize: 14,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '700',
     color: '#0F172A',
-  },
-  partnerElo: {
-    fontSize: 11,
-    color: '#64748B',
   },
   partnerActions: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
   },
-  socialBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 6,
+  iconBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  socialBtnActive: {
+  iconBtnActive: {
     backgroundColor: '#FEF3C7',
   },
   blockBtnActive: {
     backgroundColor: '#FEE2E2',
   },
-  socialBtnText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#475569',
+  starIcon: {
+    fontSize: 16,
+    color: '#94A3B8',
   },
-  blockTextActive: {
-    color: '#DC2626',
+  starIconActive: {
+    color: '#D97706',
   },
-  e2eeBanner: {
-    backgroundColor: '#F0FDF4',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#BBF7D0',
-  },
-  e2eeText: {
-    fontSize: 10,
-    color: '#15803D',
-    textAlign: 'center',
-    fontWeight: '600',
+  blockIcon: {
+    fontSize: 14,
   },
   messagesList: {
     padding: 16,
@@ -347,7 +322,9 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     flexDirection: 'row',
-    padding: 12,
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
@@ -356,17 +333,19 @@ const styles = StyleSheet.create({
   messageInput: {
     flex: 1,
     backgroundColor: '#F1F5F9',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     fontSize: 14,
     color: '#0F172A',
   },
   sendBtn: {
     backgroundColor: '#0284C7',
-    paddingHorizontal: 16,
-    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 18,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   sendBtnDisabled: {
     backgroundColor: '#94A3B8',
@@ -374,6 +353,6 @@ const styles = StyleSheet.create({
   sendBtnText: {
     color: '#FFFFFF',
     fontWeight: '700',
-    fontSize: 12,
+    fontSize: 13,
   },
 });
