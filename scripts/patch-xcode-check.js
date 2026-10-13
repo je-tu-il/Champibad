@@ -123,15 +123,54 @@ function patchSwiftSourcesInDir(dir) {
 patchSwiftSourcesInDir(path.join(__dirname, '..', 'node_modules', 'expo-modules-jsi'));
 patchSwiftSourcesInDir(path.join(__dirname, '..', 'node_modules', 'expo-modules-core'));
 
-// 5. Patch trailing comma before closing parenthesis in JavaScriptRuntime.swift
+// 5. Patch trailing comma and vector.push_back in JavaScriptRuntime.swift
 const jsRuntimePath = path.join(__dirname, '..', 'node_modules', 'expo-modules-jsi', 'apple', 'Sources', 'ExpoModulesJSI', 'Runtime', 'JavaScriptRuntime.swift');
 if (fs.existsSync(jsRuntimePath)) {
   let content = fs.readFileSync(jsRuntimePath, 'utf8');
+  let modified = false;
+
   if (content.includes('_ arguments: consuming JavaScriptValuesBuffer,')) {
     content = content.replace('_ arguments: consuming JavaScriptValuesBuffer,', '_ arguments: consuming JavaScriptValuesBuffer');
-    fs.writeFileSync(jsRuntimePath, content, 'utf8');
+    modified = true;
     console.log('✅ Removed invalid trailing comma in JavaScriptRuntime.swift');
-  } else {
-    console.log('ℹ️ JavaScriptRuntime.swift trailing comma already fixed');
+  }
+
+  if (content.includes('vector.push_back(consuming: propNameId)')) {
+    content = content.replace('vector.push_back(consuming: propNameId)', 'vector.push_back(propNameId)');
+    modified = true;
+    console.log('✅ Patched vector.push_back without consuming: label in JavaScriptRuntime.swift');
+  }
+
+  if (modified) {
+    fs.writeFileSync(jsRuntimePath, content, 'utf8');
+  }
+}
+
+// 6. Patch Task+immediate.swift (remove Task.immediate and unsupported name: label in Swift 6.1)
+const taskImmediatePath = path.join(__dirname, '..', 'node_modules', 'expo-modules-jsi', 'apple', 'Sources', 'ExpoModulesJSI', 'Extensions', 'Task+immediate.swift');
+if (fs.existsSync(taskImmediatePath)) {
+  let content = fs.readFileSync(taskImmediatePath, 'utf8');
+  if (content.includes('Task.immediate(') || content.includes('Task(name: name,')) {
+    content = content.replace(/if\s+#available\(macOS[\s\S]*?\}\s*else\s*\{[\s\S]*?return Task\(name: name, priority: \.high, operation: operation\)[\s\S]*?\}/, 'return Task(priority: priority ?? .high, operation: operation)');
+    fs.writeFileSync(taskImmediatePath, content, 'utf8');
+    console.log('✅ Patched Task+immediate.swift for Swift 6.1 Task compatibility');
+  }
+}
+
+// 7. Patch C++ headers: remove `explicit` constructors for Swift C++ interop
+const cppHeaders = [
+  path.join(__dirname, '..', 'node_modules', 'expo-modules-jsi', 'apple', 'Sources', 'ExpoModulesJSI-Cxx', 'include', 'HostFunctionClosure.h'),
+  path.join(__dirname, '..', 'node_modules', 'expo-modules-jsi', 'apple', 'Sources', 'ExpoModulesJSI-Cxx', 'include', 'RetainedSwiftPointer.h'),
+  path.join(__dirname, '..', 'node_modules', 'expo-modules-jsi', 'apple', 'Sources', 'ExpoModulesJSI-Cxx', 'include', 'HostObjectCallbacks.h')
+];
+
+for (const headerPath of cppHeaders) {
+  if (fs.existsSync(headerPath)) {
+    let content = fs.readFileSync(headerPath, 'utf8');
+    if (content.includes('explicit ')) {
+      content = content.replace(/explicit\s+/g, '');
+      fs.writeFileSync(headerPath, content, 'utf8');
+      console.log(`✅ Removed explicit constructor qualifier in ${path.relative(path.join(__dirname, '..'), headerPath)}`);
+    }
   }
 }
