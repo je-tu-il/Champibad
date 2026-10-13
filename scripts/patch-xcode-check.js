@@ -151,10 +151,16 @@ if (fs.existsSync(jsRuntimePath)) {
     console.log('✅ Removed invalid trailing comma in JavaScriptRuntime.swift');
   }
 
-  if (content.includes('vector.push_back(consuming: propNameId)')) {
-    content = content.replace('vector.push_back(consuming: propNameId)', 'vector.push_back(propNameId)');
-    modified = true;
-    console.log('✅ Patched vector.push_back without consuming: label in JavaScriptRuntime.swift');
+  if (content.includes('vector.push_back')) {
+    const oldLoop = /for\s+propertyName\s+in\s+propertyNames\s*\{[\s\S]*?vector\.push_back\([^)]+\)[\s\S]*?\}/;
+    const newLoop = `for propertyName in propertyNames {
+        expo.appendPropNameId(&vector, iRuntime, std.string(propertyName))
+      }`;
+    if (oldLoop.test(content)) {
+      content = content.replace(oldLoop, newLoop);
+      modified = true;
+      console.log('✅ Patched propertyNames loop to use expo.appendPropNameId in JavaScriptRuntime.swift');
+    }
   }
 
   // Use free function expo.createHostFunctionClosure(context, call, deallocate)
@@ -246,6 +252,22 @@ for (const headerPath of otherCppHeaders) {
       fs.writeFileSync(headerPath, content, 'utf8');
       console.log(`✅ Removed explicit constructor qualifier in ${path.relative(path.join(__dirname, '..'), headerPath)}`);
     }
+  }
+}
+
+// 7b. Patch HostObjectCallbacks.h: add appendPropNameId helper to avoid PropNameID copies
+const hostCallbacksH = path.join(__dirname, '..', 'node_modules', 'expo-modules-jsi', 'apple', 'Sources', 'ExpoModulesJSI-Cxx', 'include', 'HostObjectCallbacks.h');
+if (fs.existsSync(hostCallbacksH)) {
+  let content = fs.readFileSync(hostCallbacksH, 'utf8');
+  const helper = `
+inline void appendPropNameId(HostObjectCallbacks::PropNameIds &vector, facebook::jsi::IRuntime &runtime, const std::string &name) {
+  vector.push_back(facebook::jsi::PropNameID::forUtf8(runtime, name));
+}
+`;
+  if (!content.includes('void appendPropNameId(')) {
+    content = content.replace(/(\}\s*SWIFT_NONCOPYABLE;[^\n]*)/, '$1\n' + helper);
+    fs.writeFileSync(hostCallbacksH, content, 'utf8');
+    console.log('✅ Patched HostObjectCallbacks.h with appendPropNameId helper');
   }
 }
 
