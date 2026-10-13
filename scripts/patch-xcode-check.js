@@ -52,3 +52,39 @@ for (const pkgPath of packageSwiftFiles) {
     }
   }
 }
+
+// 4. Patch Swift files: replace invalid `weak let` with `weak var` (Swift < 6.2 compatibility)
+function patchWeakLetInDir(dir) {
+  if (!fs.existsSync(dir)) return;
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      patchWeakLetInDir(fullPath);
+    } else if (entry.name.endsWith('.swift')) {
+      let content = fs.readFileSync(fullPath, 'utf8');
+      if (content.includes('weak let')) {
+        content = content.replace(/weak\s+let\b/g, 'weak var');
+        fs.writeFileSync(fullPath, content, 'utf8');
+        console.log(`✅ Patched weak let -> weak var in ${path.relative(path.join(__dirname, '..'), fullPath)}`);
+      }
+    }
+  }
+}
+
+patchWeakLetInDir(path.join(__dirname, '..', 'node_modules', 'expo-modules-jsi'));
+patchWeakLetInDir(path.join(__dirname, '..', 'node_modules', 'expo-modules-core'));
+
+// 5. Patch trailing comma before closing parenthesis in JavaScriptRuntime.swift
+const jsRuntimePath = path.join(__dirname, '..', 'node_modules', 'expo-modules-jsi', 'apple', 'Sources', 'ExpoModulesJSI', 'Runtime', 'JavaScriptRuntime.swift');
+if (fs.existsSync(jsRuntimePath)) {
+  let content = fs.readFileSync(jsRuntimePath, 'utf8');
+  // Match `_ arguments: consuming JavaScriptValuesBuffer,` followed by newline and `)`
+  if (content.includes('_ arguments: consuming JavaScriptValuesBuffer,')) {
+    content = content.replace('_ arguments: consuming JavaScriptValuesBuffer,', '_ arguments: consuming JavaScriptValuesBuffer');
+    fs.writeFileSync(jsRuntimePath, content, 'utf8');
+    console.log('✅ Removed invalid trailing comma in JavaScriptRuntime.swift');
+  } else {
+    console.log('ℹ️ JavaScriptRuntime.swift trailing comma already fixed');
+  }
+}

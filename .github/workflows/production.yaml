@@ -90,8 +90,10 @@ jobs:
       - name: 🏗️ Expo Prebuild iOS
         run: npx expo prebuild --platform ios --clean --no-install
 
-      - name: 🩹 Patch Podfile Swift Compatibility
-        run: node scripts/patch-podfile-swift.js
+      - name: 🩹 Patch Podfile & Swift Source Compatibility
+        run: |
+          node scripts/patch-podfile-swift.js
+          node scripts/patch-xcode-check.js
 
       - name: 📦 Install Pods & Generate Workspace
         working-directory: ios
