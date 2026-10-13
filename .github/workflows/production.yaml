@@ -52,7 +52,7 @@ jobs:
 
   build-ios:
     name: 🍏 Build iOS IPA (Unsigned for Sideloading)
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
@@ -63,13 +63,10 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: 🛠️ Select Xcode 15.2
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: '15.2.0'
-
-      - name: 🔍 Verify Xcode version
-        run: xcodebuild -version
+      - name: 🔍 Verify Xcode & Swift version
+        run: |
+          xcodebuild -version
+          swift -version
 
       - name: 💎 Setup CocoaPods
         run: |
@@ -78,11 +75,14 @@ jobs:
       - name: 📦 Install dependencies
         run: npm ci || npm install
 
+      - name: 🩹 Patch React Native CocoaPods Xcode Check
+        run: node scripts/patch-xcode-check.js
+
       - name: 🏗️ Expo Prebuild iOS
         run: npx expo prebuild --platform ios --clean --no-install
 
-      - name: 🩹 Patch React Native CocoaPods Xcode Check
-        run: node scripts/patch-xcode-check.js
+      - name: 🩹 Patch Podfile Swift Compatibility
+        run: node scripts/patch-podfile-swift.js
 
       - name: 📦 Install Pods & Generate Workspace
         working-directory: ios
