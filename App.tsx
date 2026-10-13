@@ -12,22 +12,18 @@ import { Player, GameMode } from './src/types';
 import { AuthService } from './src/services/authService';
 import { SUPER_ADMIN_EMAIL } from './src/config/constants';
 import { Header } from './src/components/Header';
-import { AdModal } from './src/components/AdModal';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { LeaderboardScreen } from './src/screens/LeaderboardScreen';
 import { MatchesScreen } from './src/screens/MatchesScreen';
-import { CashprizeScreen } from './src/screens/CashprizeScreen';
 import { SlotsScreen } from './src/screens/SlotsScreen';
 import { ChatScreen } from './src/screens/ChatScreen';
 import { AdminScreen } from './src/screens/AdminScreen';
 
-type TabKey = 'LEADERBOARD' | 'MATCHES' | 'CASHPRIZE' | 'SLOTS' | 'CHAT' | 'ADMIN';
+type TabKey = 'LEADERBOARD' | 'MATCHES' | 'SLOTS' | 'CHAT' | 'ADMIN';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<Player | null>(null);
   const [currentTab, setCurrentTab] = useState<TabKey>('LEADERBOARD');
-  const [adModalVisible, setAdModalVisible] = useState(false);
-  const [adReason, setAdReason] = useState<string | undefined>();
   const [targetOpponentForChallenge, setTargetOpponentForChallenge] = useState<Player | null>(null);
 
   useEffect(() => {
@@ -62,9 +58,7 @@ export default function App() {
   };
 
   const handleMatchValidated = () => {
-    // Proposer l'annonce 5s de soutien au cashprize
-    setAdReason('Un match de classement a été validé ! Financez la cagnotte en regardant cette annonce de 5 secondes.');
-    setAdModalVisible(true);
+    Alert.alert('Match Validé ! 🏸', 'Les scores et les classements Elo ont été mis à jour.');
   };
 
   const isAdmin =
@@ -84,14 +78,10 @@ export default function App() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
 
-      {/* En-tête de l'application */}
+      {/* En-tête épuré */}
       <Header
         currentUser={currentUser}
         onLogout={handleLogout}
-        onWatchAd={() => {
-          setAdReason('Visionnage volontaire pour faire grimper le cashprize de Champibad.');
-          setAdModalVisible(true);
-        }}
       />
 
       {/* Contenu de l'onglet actif */}
@@ -110,16 +100,6 @@ export default function App() {
             onClearTargetOpponent={() => setTargetOpponentForChallenge(null)}
           />
         )}
-        {currentTab === 'CASHPRIZE' && (
-          <CashprizeScreen
-            currentUser={currentUser}
-            onWatchAd={() => {
-              setAdReason('Financement direct des 3 prix du Cashprize de Champibad.');
-              setAdModalVisible(true);
-            }}
-            onUserUpdated={(u) => setCurrentUser(u)}
-          />
-        )}
         {currentTab === 'SLOTS' && <SlotsScreen currentUser={currentUser} />}
         {currentTab === 'CHAT' && (
           <ChatScreen
@@ -132,7 +112,7 @@ export default function App() {
         )}
       </View>
 
-      {/* Barre de navigation inférieure (Tabs) */}
+      {/* Barre de navigation simplifiée (4 onglets clés + Admin si connecté) */}
       <View style={styles.bottomTabBar}>
         <TouchableOpacity
           style={[styles.tabItem, currentTab === 'LEADERBOARD' && styles.activeTabItem]}
@@ -155,16 +135,6 @@ export default function App() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.tabItem, currentTab === 'CASHPRIZE' && styles.activeTabItem]}
-          onPress={() => setCurrentTab('CASHPRIZE')}
-        >
-          <Text style={styles.tabIcon}>💰</Text>
-          <Text style={[styles.tabLabel, currentTab === 'CASHPRIZE' && styles.activeTabLabel]}>
-            Cashprize
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
           style={[styles.tabItem, currentTab === 'SLOTS' && styles.activeTabItem]}
           onPress={() => setCurrentTab('SLOTS')}
         >
@@ -180,7 +150,7 @@ export default function App() {
         >
           <Text style={styles.tabIcon}>💬</Text>
           <Text style={[styles.tabLabel, currentTab === 'CHAT' && styles.activeTabLabel]}>
-            Chat E2EE
+            Messages
           </Text>
         </TouchableOpacity>
 
@@ -196,17 +166,6 @@ export default function App() {
           </TouchableOpacity>
         )}
       </View>
-
-      {/* Modal publicitaire Google Ads 5 secondes */}
-      <AdModal
-        visible={adModalVisible}
-        reason={adReason}
-        onAdFinished={() => {
-          setAdModalVisible(false);
-          // Actualiser le statut du user si nécessaire
-          AuthService.getCurrentUser().then((u) => u && setCurrentUser(u));
-        }}
-      />
     </SafeAreaView>
   );
 }
@@ -225,31 +184,30 @@ const styles = StyleSheet.create({
     backgroundColor: '#0F172A',
     borderTopWidth: 1,
     borderTopColor: '#1E293B',
-    paddingVertical: 6,
-    paddingHorizontal: 4,
-    justifyContent: 'space-around',
-    alignItems: 'center',
+    paddingBottom: 6,
+    paddingTop: 6,
   },
   tabItem: {
+    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 4,
-    paddingHorizontal: 6,
-    borderRadius: 8,
-    minWidth: 54,
   },
   activeTabItem: {
-    backgroundColor: '#1E293B',
+    borderTopWidth: 2,
+    borderTopColor: '#38BDF8',
   },
   tabIcon: {
-    fontSize: 18,
+    fontSize: 20,
     marginBottom: 2,
   },
   tabLabel: {
-    fontSize: 9,
-    fontWeight: '700',
+    fontSize: 10,
+    fontWeight: '600',
     color: '#94A3B8',
   },
   activeTabLabel: {
     color: '#38BDF8',
+    fontWeight: '800',
   },
 });

@@ -263,6 +263,26 @@ export class AuthService {
   }
 
   /**
+   * Ajoute directement un nouveau joueur (par l'administrateur)
+   */
+  static async addPlayerDirectly(player: Player): Promise<Player[]> {
+    const players = await this.getAllPlayers();
+    const updated = [player, ...players.filter((p) => p.licenseNumber !== player.licenseNumber)];
+    await this.saveAllPlayers(updated);
+    return updated;
+  }
+
+  /**
+   * Supprime un joueur
+   */
+  static async deletePlayer(playerId: string): Promise<Player[]> {
+    const players = await this.getAllPlayers();
+    const updated = players.filter((p) => p.id !== playerId);
+    await this.saveAllPlayers(updated);
+    return updated;
+  }
+
+  /**
    * Déconnexion
    */
   static async logout(): Promise<void> {

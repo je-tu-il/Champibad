@@ -142,11 +142,6 @@ export const LeaderboardScreen: React.FC<Props> = ({ currentUser, onChallengePla
                       </Text>
                     </View>
                   ))}
-                  {item.cashprizePaid && (
-                    <View style={styles.cashBadge}>
-                      <Text style={styles.cashBadgeText}>💰 Éligible Cashprize</Text>
-                    </View>
-                  )}
                 </View>
 
                 <Text style={styles.statsSummary}>
