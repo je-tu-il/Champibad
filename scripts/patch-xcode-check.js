@@ -23,7 +23,7 @@ if (fs.existsSync(utilsPath)) {
   }
 }
 
-// 3. Patch Swift Package Manager tools version (downgrade swift-tools-version 6.2 to 6.0 for Swift 6.1 compatibility)
+// 3. Patch Swift Package Manager tools version and C++ standard (downgrade to Swift 6.0 and C++17)
 const packageSwiftFiles = [
   path.join(__dirname, '..', 'node_modules', 'expo-modules-jsi', 'apple', 'Package.swift'),
   path.join(__dirname, '..', 'node_modules', '@expo', 'expo-modules-macros-plugin', 'apple', 'Package.swift')
@@ -44,12 +44,28 @@ for (const pkgPath of packageSwiftFiles) {
       modified = true;
     }
 
+    if (content.includes('.cxx20')) {
+      content = content.replace(/\.cxx20/g, '.cxx17');
+      modified = true;
+    }
+
     if (modified) {
       fs.writeFileSync(pkgPath, content, 'utf8');
-      console.log(`✅ Patched Package.swift in ${path.relative(path.join(__dirname, '..'), pkgPath)} (swift-tools-version set to 6.0)`);
+      console.log(`✅ Patched Package.swift in ${path.relative(path.join(__dirname, '..'), pkgPath)} (swift-tools-version: 6.0, C++17)`);
     } else {
       console.log(`ℹ️ Package.swift in ${path.relative(path.join(__dirname, '..'), pkgPath)} already up to date`);
     }
+  }
+}
+
+// 3b. Patch ExpoModulesJSI.podspec for C++17
+const podspecPath = path.join(__dirname, '..', 'node_modules', 'expo-modules-jsi', 'apple', 'ExpoModulesJSI.podspec');
+if (fs.existsSync(podspecPath)) {
+  let content = fs.readFileSync(podspecPath, 'utf8');
+  if (content.includes("'CLANG_CXX_LANGUAGE_STANDARD' => 'c++20'")) {
+    content = content.replace("'CLANG_CXX_LANGUAGE_STANDARD' => 'c++20'", "'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17'");
+    fs.writeFileSync(podspecPath, content, 'utf8');
+    console.log('✅ ExpoModulesJSI.podspec patched to C++17');
   }
 }
 
@@ -123,7 +139,7 @@ function patchSwiftSourcesInDir(dir) {
 patchSwiftSourcesInDir(path.join(__dirname, '..', 'node_modules', 'expo-modules-jsi'));
 patchSwiftSourcesInDir(path.join(__dirname, '..', 'node_modules', 'expo-modules-core'));
 
-// 5. Patch trailing comma and vector.push_back in JavaScriptRuntime.swift
+// 5. Patch trailing comma, vector.push_back, and HostFunctionClosure call in JavaScriptRuntime.swift
 const jsRuntimePath = path.join(__dirname, '..', 'node_modules', 'expo-modules-jsi', 'apple', 'Sources', 'ExpoModulesJSI', 'Runtime', 'JavaScriptRuntime.swift');
 if (fs.existsSync(jsRuntimePath)) {
   let content = fs.readFileSync(jsRuntimePath, 'utf8');
@@ -139,6 +155,12 @@ if (fs.existsSync(jsRuntimePath)) {
     content = content.replace('vector.push_back(consuming: propNameId)', 'vector.push_back(propNameId)');
     modified = true;
     console.log('✅ Patched vector.push_back without consuming: label in JavaScriptRuntime.swift');
+  }
+
+  if (content.includes('return expo.HostFunctionClosure(context, call, deallocate)')) {
+    content = content.replace(/return expo\.HostFunctionClosure\(context, call, deallocate\)/g, 'return expo.HostFunctionClosure(context: context, closure: call, deallocator: deallocate)');
+    modified = true;
+    console.log('✅ Patched HostFunctionClosure constructor call with labeled arguments in JavaScriptRuntime.swift');
   }
 
   if (modified) {
@@ -157,14 +179,39 @@ if (fs.existsSync(taskImmediatePath)) {
   }
 }
 
-// 7. Patch C++ headers: remove `explicit` constructors for Swift C++ interop
-const cppHeaders = [
-  path.join(__dirname, '..', 'node_modules', 'expo-modules-jsi', 'apple', 'Sources', 'ExpoModulesJSI-Cxx', 'include', 'HostFunctionClosure.h'),
+// 7. Patch C++ headers: remove `explicit` constructors and add C++17 factory for HostFunctionClosure
+const hostClosureH = path.join(__dirname, '..', 'node_modules', 'expo-modules-jsi', 'apple', 'Sources', 'ExpoModulesJSI-Cxx', 'include', 'HostFunctionClosure.h');
+if (fs.existsSync(hostClosureH)) {
+  let content = fs.readFileSync(hostClosureH, 'utf8');
+  let modified = false;
+
+  if (content.includes('explicit HostFunctionClosure(')) {
+    content = content.replace('explicit HostFunctionClosure(', 'HostFunctionClosure(');
+    modified = true;
+  }
+
+  if (!content.includes('HostFunctionClosure* _Nonnull create(')) {
+    const factory = `
+  static inline HostFunctionClosure* _Nonnull create(Context context, Closure closure, Deallocator deallocator) {
+    return new HostFunctionClosure(context, closure, deallocator);
+  }
+`;
+    content = content.replace('public:', 'public:' + factory);
+    modified = true;
+  }
+
+  if (modified) {
+    fs.writeFileSync(hostClosureH, content, 'utf8');
+    console.log('✅ Patched HostFunctionClosure.h with non-explicit constructor and factory');
+  }
+}
+
+const otherCppHeaders = [
   path.join(__dirname, '..', 'node_modules', 'expo-modules-jsi', 'apple', 'Sources', 'ExpoModulesJSI-Cxx', 'include', 'RetainedSwiftPointer.h'),
   path.join(__dirname, '..', 'node_modules', 'expo-modules-jsi', 'apple', 'Sources', 'ExpoModulesJSI-Cxx', 'include', 'HostObjectCallbacks.h')
 ];
 
-for (const headerPath of cppHeaders) {
+for (const headerPath of otherCppHeaders) {
   if (fs.existsSync(headerPath)) {
     let content = fs.readFileSync(headerPath, 'utf8');
     if (content.includes('explicit ')) {
