@@ -179,30 +179,37 @@ if (fs.existsSync(taskImmediatePath)) {
   }
 }
 
-// 7. Patch C++ headers: remove `explicit` constructors and add C++17 factory for HostFunctionClosure
+// 7. Patch C++ headers: remove `explicit` constructors and add C++17 factory for HostFunctionClosure AFTER `using Closure`
 const hostClosureH = path.join(__dirname, '..', 'node_modules', 'expo-modules-jsi', 'apple', 'Sources', 'ExpoModulesJSI-Cxx', 'include', 'HostFunctionClosure.h');
 if (fs.existsSync(hostClosureH)) {
   let content = fs.readFileSync(hostClosureH, 'utf8');
   let modified = false;
+
+  // Clean out any previous `create` declaration before `using Closure`
+  if (content.includes('static inline HostFunctionClosure* _Nonnull create(')) {
+    content = content.replace(/static inline HostFunctionClosure\* _Nonnull create[\s\S]*?\}\s*/g, '');
+    modified = true;
+  }
 
   if (content.includes('explicit HostFunctionClosure(')) {
     content = content.replace('explicit HostFunctionClosure(', 'HostFunctionClosure(');
     modified = true;
   }
 
-  if (!content.includes('HostFunctionClosure* _Nonnull create(')) {
-    const factory = `
+  // Insert factory AFTER `using Closure = ...;` so Closure is declared before use!
+  const factory = `
   static inline HostFunctionClosure* _Nonnull create(Context context, Closure closure, Deallocator deallocator) {
     return new HostFunctionClosure(context, closure, deallocator);
   }
 `;
-    content = content.replace('public:', 'public:' + factory);
+  if (!content.includes('static inline HostFunctionClosure* _Nonnull create(')) {
+    content = content.replace(/(using Closure = [^;]+;)/, '$1' + factory);
     modified = true;
   }
 
   if (modified) {
     fs.writeFileSync(hostClosureH, content, 'utf8');
-    console.log('✅ Patched HostFunctionClosure.h with non-explicit constructor and factory');
+    console.log('✅ Patched HostFunctionClosure.h with correctly-ordered factory after Closure typedef');
   }
 }
 
