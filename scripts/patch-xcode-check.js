@@ -53,33 +53,80 @@ for (const pkgPath of packageSwiftFiles) {
   }
 }
 
-// 4. Patch Swift files: replace invalid `weak let` with `weak var` (Swift < 6.2 compatibility)
-function patchWeakLetInDir(dir) {
+// 4. Patch Swift files: replace `weak let` with `nonisolated(unsafe) weak var` and add `@unchecked Sendable`
+function patchSwiftSourcesInDir(dir) {
   if (!fs.existsSync(dir)) return;
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      patchWeakLetInDir(fullPath);
+      patchSwiftSourcesInDir(fullPath);
     } else if (entry.name.endsWith('.swift')) {
       let content = fs.readFileSync(fullPath, 'utf8');
+      let modified = false;
+
+      // 4a. Fix `weak let` or `weak var runtime` without nonisolated(unsafe)
+      if (/(?<!nonisolated\(unsafe\)\s+)(private|internal)\s+weak\s+(let|var)\s+runtime/.test(content)) {
+        content = content.replace(/(?<!nonisolated\(unsafe\)\s+)(private|internal)\s+weak\s+(let|var)\s+runtime/g, 'nonisolated(unsafe) $1 weak var runtime');
+        modified = true;
+      }
+
+      // 4b. Fix `weak let` or `weak var appContext` without nonisolated(unsafe)
+      if (/(?<!nonisolated\(unsafe\)\s+)(private|internal)\s+weak\s+(let|var)\s+appContext/.test(content)) {
+        content = content.replace(/(?<!nonisolated\(unsafe\)\s+)(private|internal)\s+weak\s+(let|var)\s+appContext/g, 'nonisolated(unsafe) $1 weak var appContext');
+        modified = true;
+      }
+
+      // 4c. Any remaining bare `weak let`
       if (content.includes('weak let')) {
         content = content.replace(/weak\s+let\b/g, 'weak var');
+        modified = true;
+      }
+
+      // 4d. Add @unchecked Sendable to class definitions with weak stored properties
+      if (entry.name === 'JavaScriptPropNameID.swift') {
+        if (content.includes('class JavaScriptPropNameID: JavaScriptType {') && !content.includes('@unchecked Sendable')) {
+          content = content.replace('class JavaScriptPropNameID: JavaScriptType {', 'class JavaScriptPropNameID: JavaScriptType, @unchecked Sendable {');
+          modified = true;
+        }
+      }
+
+      if (entry.name === 'JavaScriptError.swift') {
+        if (content.includes('class JavaScriptError: Error, Sendable {')) {
+          content = content.replace('class JavaScriptError: Error, Sendable {', 'class JavaScriptError: Error, @unchecked Sendable {');
+          modified = true;
+        }
+      }
+
+      if (entry.name === 'JavaScriptValue.swift') {
+        if (content.includes('class JavaScriptValue: JavaScriptType, Equatable, Escapable {') && !content.includes('@unchecked Sendable')) {
+          content = content.replace('class JavaScriptValue: JavaScriptType, Equatable, Escapable {', 'class JavaScriptValue: JavaScriptType, Equatable, Escapable, @unchecked Sendable {');
+          modified = true;
+        }
+      }
+
+      if (entry.name === 'SharedObjectRegistry.swift') {
+        if (content.includes('class SharedObjectRegistry: Sendable {')) {
+          content = content.replace('class SharedObjectRegistry: Sendable {', 'class SharedObjectRegistry: @unchecked Sendable {');
+          modified = true;
+        }
+      }
+
+      if (modified) {
         fs.writeFileSync(fullPath, content, 'utf8');
-        console.log(`✅ Patched weak let -> weak var in ${path.relative(path.join(__dirname, '..'), fullPath)}`);
+        console.log(`✅ Patched Swift concurrency in ${path.relative(path.join(__dirname, '..'), fullPath)}`);
       }
     }
   }
 }
 
-patchWeakLetInDir(path.join(__dirname, '..', 'node_modules', 'expo-modules-jsi'));
-patchWeakLetInDir(path.join(__dirname, '..', 'node_modules', 'expo-modules-core'));
+patchSwiftSourcesInDir(path.join(__dirname, '..', 'node_modules', 'expo-modules-jsi'));
+patchSwiftSourcesInDir(path.join(__dirname, '..', 'node_modules', 'expo-modules-core'));
 
 // 5. Patch trailing comma before closing parenthesis in JavaScriptRuntime.swift
 const jsRuntimePath = path.join(__dirname, '..', 'node_modules', 'expo-modules-jsi', 'apple', 'Sources', 'ExpoModulesJSI', 'Runtime', 'JavaScriptRuntime.swift');
 if (fs.existsSync(jsRuntimePath)) {
   let content = fs.readFileSync(jsRuntimePath, 'utf8');
-  // Match `_ arguments: consuming JavaScriptValuesBuffer,` followed by newline and `)`
   if (content.includes('_ arguments: consuming JavaScriptValuesBuffer,')) {
     content = content.replace('_ arguments: consuming JavaScriptValuesBuffer,', '_ arguments: consuming JavaScriptValuesBuffer');
     fs.writeFileSync(jsRuntimePath, content, 'utf8');
