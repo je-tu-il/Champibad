@@ -5,15 +5,15 @@ const LICENSEES_STORAGE_KEY = '@champibad_licensees_cache';
 const LAST_SYNC_STORAGE_KEY = '@champibad_licensees_last_sync';
 const SYNC_INTERVAL_MS = 60 * 60 * 1000; // 1 heure
 
-// Liste initiale des licenciés du club Champipaf (Champigneulles)
-export const MOCK_CHAMPIPAF_LICENSEES: Licensee[] = [
+// Liste initiale des licenciés du club Champibad (Champigneulles)
+export const MOCK_CHAMPIBAD_LICENSEES: Licensee[] = [
   {
     id: '07123456',
     licenseNumber: '07123456',
     firstName: 'Aurélien',
     lastName: 'Reymond',
     gender: 'M',
-    club: 'Champipaf - Champigneulles',
+    club: 'Champibad - Champigneulles',
     officialRank: 'R5',
     email: 'reymond_aurelien@yahoo.fr',
     syncedAt: Date.now(),
@@ -24,7 +24,7 @@ export const MOCK_CHAMPIPAF_LICENSEES: Licensee[] = [
     firstName: 'Thomas',
     lastName: 'Dubois',
     gender: 'M',
-    club: 'Champipaf - Champigneulles',
+    club: 'Champibad - Champigneulles',
     officialRank: 'D7',
     email: 'thomas.dubois@badminton-champigneulles.fr',
     syncedAt: Date.now(),
@@ -35,7 +35,7 @@ export const MOCK_CHAMPIPAF_LICENSEES: Licensee[] = [
     firstName: 'Camille',
     lastName: 'Laurent',
     gender: 'F',
-    club: 'Champipaf - Champigneulles',
+    club: 'Champibad - Champigneulles',
     officialRank: 'D8',
     email: 'camille.laurent@gmail.com',
     syncedAt: Date.now(),
@@ -46,7 +46,7 @@ export const MOCK_CHAMPIPAF_LICENSEES: Licensee[] = [
     firstName: 'Julien',
     lastName: 'Moreau',
     gender: 'M',
-    club: 'Champipaf - Champigneulles',
+    club: 'Champibad - Champigneulles',
     officialRank: 'P10',
     email: 'j.moreau@orange.fr',
     syncedAt: Date.now(),
@@ -57,7 +57,7 @@ export const MOCK_CHAMPIPAF_LICENSEES: Licensee[] = [
     firstName: 'Sarah',
     lastName: 'Bernard',
     gender: 'F',
-    club: 'Champipaf - Champigneulles',
+    club: 'Champibad - Champigneulles',
     officialRank: 'P11',
     email: 'sarah.b@free.fr',
     syncedAt: Date.now(),
@@ -68,7 +68,7 @@ export const MOCK_CHAMPIPAF_LICENSEES: Licensee[] = [
     firstName: 'Maxime',
     lastName: 'Petit',
     gender: 'M',
-    club: 'Champipaf - Champigneulles',
+    club: 'Champibad - Champigneulles',
     officialRank: 'R6',
     email: 'maxime.petit@hotmail.com',
     syncedAt: Date.now(),
@@ -79,7 +79,7 @@ export const MOCK_CHAMPIPAF_LICENSEES: Licensee[] = [
     firstName: 'Lucas',
     lastName: 'Roux',
     gender: 'M',
-    club: 'Champipaf - Champigneulles',
+    club: 'Champibad - Champigneulles',
     officialRank: 'NC',
     email: 'lucas.roux@gmail.com',
     syncedAt: Date.now(),
@@ -99,7 +99,7 @@ export class LicenseService {
     let cachedList: Licensee[] = cachedStr ? JSON.parse(cachedStr) : [];
 
     if (cachedList.length === 0) {
-      cachedList = [...MOCK_CHAMPIPAF_LICENSEES];
+      cachedList = [...MOCK_CHAMPIBAD_LICENSEES];
       await AsyncStorage.setItem(LICENSEES_STORAGE_KEY, JSON.stringify(cachedList));
       await AsyncStorage.setItem(LAST_SYNC_STORAGE_KEY, now.toString());
       return cachedList;

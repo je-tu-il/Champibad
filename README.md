@@ -1,6 +1,6 @@
-# 🏸 Champibad — Plateforme Interne de Compétition (Club Champipaf)
+# 🏸 Champibad — Plateforme Interne de Compétition (Club Champibad)
 
-Application mobile officielle de compétition interne et de classement Elo pour le club de badminton **Champipaf** à **Champigneulles**.
+Application mobile officielle de compétition interne et de classement Elo pour le club de badminton **Champibad** à **Champigneulles**.
 
 Conçue avec **React Native / Expo SDK** (TypeScript) et **Firebase**, optimisée pour iPhone et Samsung / Android avec compilation automatisée via GitHub Actions.
 
@@ -9,7 +9,7 @@ Conçue avec **React Native / Expo SDK** (TypeScript) et **Firebase**, optimisé
 ## 🌟 Fonctionnalités Clés
 
 ### 1. 🔐 Authentification & Onboarding des Licenciés
-* **Vérification FFBaD** : Seuls les adhérents figurant dans la liste officielle de Champipaf peuvent créer un compte (vérification Nom, Prénom, Numéro de licence).
+* **Vérification FFBaD** : Seuls les adhérents figurant dans la liste officielle de Champibad peuvent créer un compte (vérification Nom, Prénom, Numéro de licence).
 * **Synchronisation API** : Actualisation en arrière-plan toutes les heures avec possibilité de forcer la synchro depuis le panel admin.
 * **Super-Admin** : Réservé et configuré pour `reymond_aurelien@yahoo.fr`.
 

@@ -16,7 +16,7 @@ export const Header: React.FC<Props> = ({ currentUser, onLogout, onWatchAd }) =>
           <View style={styles.titleRow}>
             <Text style={styles.appTitle}>🏸 CHAMPIBAD</Text>
             <View style={styles.clubPill}>
-              <Text style={styles.clubText}>CHAMPIPAF</Text>
+              <Text style={styles.clubText}>CHAMPIGNEULLES</Text>
             </View>
           </View>
           <Text style={styles.subtitle}>Club de Champigneulles • Compétition Interne</Text>

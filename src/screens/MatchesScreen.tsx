@@ -364,7 +364,7 @@ export const MatchesScreen: React.FC<Props> = ({
           <ScrollView contentContainerStyle={styles.challengeModalCard}>
             <Text style={styles.modalTitle}>Proposer un Défi 🏸</Text>
             <Text style={styles.modalSubtitle}>
-              Choisissez un adversaire et un créneau commun du club Champipaf.
+              Choisissez un adversaire et un créneau commun du club Champibad.
             </Text>
 
             <Text style={styles.fieldLabel}>Adversaire :</Text>

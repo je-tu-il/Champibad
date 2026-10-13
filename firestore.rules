@@ -26,7 +26,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Licenciés du club Champipaf (synchro API)
+    // Licenciés du club Champibad (synchro API)
     match /licensees/{licenseId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();

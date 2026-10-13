@@ -99,6 +99,16 @@ jobs:
         run: |
           pod install --repo-update
 
+      - name: 🩹 Patch Pod Headers (JSI noexcept move semantics)
+        run: |
+          node scripts/patch-jsi-noexcept.js
+          FILE="ios/Pods/Headers/Public/React-jsi/jsi/jsi.h"
+          if [ -f "$FILE" ]; then
+            sed -i '' 's/PropNameID(PropNameID&& other) = default;/PropNameID(PropNameID&& other) noexcept = default;/' "$FILE" || true
+            sed -i '' 's/PropNameID& operator=(PropNameID&& other) = default;/PropNameID& operator=(PropNameID&& other) noexcept = default;/' "$FILE" || true
+            echo "Verified/patched $FILE with sed"
+          fi
+
       - name: 🔍 Verify Workspace Exists
         run: |
           test -d ios/Champibad.xcworkspace || (echo "Error: Champibad.xcworkspace was not generated" && exit 1)

@@ -8,7 +8,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "postinstall": "node scripts/patch-xcode-check.js"
+    "postinstall": "node scripts/patch-xcode-check.js && node scripts/patch-jsi-noexcept.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",

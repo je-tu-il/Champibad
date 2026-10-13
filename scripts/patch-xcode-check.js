@@ -248,3 +248,10 @@ for (const headerPath of otherCppHeaders) {
     }
   }
 }
+
+// 8. Patch JSI move constructors with noexcept
+try {
+  require('./patch-jsi-noexcept.js');
+} catch (e) {
+  console.log('ℹ️ patch-jsi-noexcept.js execution note:', e.message);
+}

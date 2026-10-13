@@ -74,10 +74,10 @@ export const AdModal: React.FC<Props> = ({ visible, onAdFinished, reason }) => {
             <Text style={styles.adIcon}>🏸</Text>
             <Text style={styles.adTitle}>Babolat & Yonex Pro Store</Text>
             <Text style={styles.adSubtitle}>
-              Équipez-vous au meilleur prix chez le partenaire officiel du club Champipaf !
+              Équipez-vous au meilleur prix chez le partenaire officiel du club Champibad !
             </Text>
             <View style={styles.dealPill}>
-              <Text style={styles.dealText}>-20% avec le code CHAMPIPAF2026</Text>
+              <Text style={styles.dealText}>-20% avec le code CHAMPIBAD2026</Text>
             </View>
           </View>
 

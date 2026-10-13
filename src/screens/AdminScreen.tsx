@@ -78,7 +78,7 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
       await CashprizeService.saveSettings(newSettings);
       Alert.alert(
         'Synchronisation terminée',
-        `${updatedList.length} licenciés synchronisés avec succès depuis l'API FFBaD/Champipaf.`
+        `${updatedList.length} licenciés synchronisés avec succès depuis l'API FFBaD/Champibad.`
       );
     } catch (e: any) {
       Alert.alert('Erreur API', e.message);
@@ -237,7 +237,7 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
       <View style={styles.sectionCard}>
         <Text style={styles.sectionTitle}>🔄 Synchronisation API des Licenciés</Text>
         <Text style={styles.sectionDesc}>
-          Synchronise automatiquement le fichier des licenciés de Champipaf toutes les heures.
+          Synchronise automatiquement le fichier des licenciés de Champibad toutes les heures.
         </Text>
 
         <Text style={styles.inputLabel}>URL de l'API / Webhook du club :</Text>

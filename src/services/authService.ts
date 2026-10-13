@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Player } from '../types';
 import { SUPER_ADMIN_EMAIL } from '../config/constants';
-import { LicenseService, MOCK_CHAMPIPAF_LICENSEES } from './licenseService';
+import { LicenseService, MOCK_CHAMPIBAD_LICENSEES } from './licenseService';
 
 const CURRENT_USER_KEY = '@champibad_current_user';
 const PLAYERS_KEY = '@champibad_players_db';
@@ -197,7 +197,7 @@ export class AuthService {
     const licensee = await LicenseService.verifyLicensee(licenseNumber, firstName, lastName);
     if (!licensee) {
       throw new Error(
-        `Licencié introuvable dans le club Champipaf pour : ${firstName} ${lastName} (N° ${licenseNumber}). Contactez le responsable du club.`
+        `Licencié introuvable dans le club Champibad pour : ${firstName} ${lastName} (N° ${licenseNumber}). Contactez le responsable du club.`
       );
     }
 

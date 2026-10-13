@@ -89,7 +89,7 @@ export default function App() {
         currentUser={currentUser}
         onLogout={handleLogout}
         onWatchAd={() => {
-          setAdReason('Visionnage volontaire pour faire grimper le cashprize de Champipaf.');
+          setAdReason('Visionnage volontaire pour faire grimper le cashprize de Champibad.');
           setAdModalVisible(true);
         }}
       />
@@ -114,7 +114,7 @@ export default function App() {
           <CashprizeScreen
             currentUser={currentUser}
             onWatchAd={() => {
-              setAdReason('Financement direct des 3 prix du Cashprize de Champipaf.');
+              setAdReason('Financement direct des 3 prix du Cashprize de Champibad.');
               setAdModalVisible(true);
             }}
             onUserUpdated={(u) => setCurrentUser(u)}

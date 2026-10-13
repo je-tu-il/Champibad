@@ -8,7 +8,7 @@ export interface Licensee {
   firstName: string;
   lastName: string;
   gender: 'M' | 'F';
-  club: string; // 'Champipaf'
+  club: string; // 'Champibad'
   officialRank?: string; // e.g. R4, D7, P10, NC
   email?: string;
   phone?: string;

@@ -148,7 +148,7 @@ export const CashprizeScreen: React.FC<Props> = ({
       ))}
 
       <View style={styles.rulesBox}>
-        <Text style={styles.rulesTitle}>ℹ️ Modalités du Cashprize Champipaf</Text>
+        <Text style={styles.rulesTitle}>ℹ️ Modalités du Cashprize Champibad</Text>
         <Text style={styles.rulesText}>
           • Les cotisations physiques sont centralisées par l'administrateur du club.{'\n'}
           • Les prix sont remis en main propre lors de la fête de fin de saison.{'\n'}

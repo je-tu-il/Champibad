@@ -32,7 +32,7 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
 
     setLoading(true);
     try {
-      const userEmail = email.trim() || `${firstName.toLowerCase()}.${lastName.toLowerCase()}@champipaf.fr`;
+      const userEmail = email.trim() || `${firstName.toLowerCase()}.${lastName.toLowerCase()}@champibad.fr`;
       const player = await AuthService.registerOrLogin(
         firstName.trim(),
         lastName.trim(),
@@ -76,7 +76,7 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
       <View style={styles.header}>
         <Text style={styles.logo}>🏸</Text>
         <Text style={styles.title}>CHAMPIBAD</Text>
-        <Text style={styles.badge}>Club Champipaf • Champigneulles</Text>
+        <Text style={styles.badge}>Club Champibad • Champigneulles</Text>
         <Text style={styles.desc}>
           Plateforme officielle de compétition interne et de classement Elo.
         </Text>

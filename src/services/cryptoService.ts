@@ -22,7 +22,7 @@ export class CryptoService {
   /**
    * Dérive une clé de conversation unique pour deux utilisateurs (E2EE)
    */
-  static deriveConversationKey(userAId: string, userBId: string, salt: string = 'champipaf-salt-v1'): string {
+  static deriveConversationKey(userAId: string, userBId: string, salt: string = 'champibad-salt-v1'): string {
     const sortedIds = [userAId, userBId].sort().join(':');
     return PBKDF2(sortedIds, salt, {
       keySize: 256 / 32,
