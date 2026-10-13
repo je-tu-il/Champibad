@@ -67,12 +67,11 @@ jobs:
         run: |
           echo "Available Xcode installations:"
           ls -d /Applications/Xcode* || true
-          if [ -d "/Applications/Xcode_17.0.app" ]; then
-            echo "Selecting /Applications/Xcode_17.0.app"
-            sudo xcode-select -s /Applications/Xcode_17.0.app/Contents/Developer
-          elif [ -d "/Applications/Xcode_16.5.app" ]; then
-            echo "Selecting /Applications/Xcode_16.5.app"
-            sudo xcode-select -s /Applications/Xcode_16.5.app/Contents/Developer
+          LATEST_XCODE=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -n 1)
+          if [ -n "$LATEST_XCODE" ]; then
+            echo "Selecting $LATEST_XCODE"
+            sudo xcode-select -s "$LATEST_XCODE/Contents/Developer"
+            echo "DEVELOPER_DIR=$LATEST_XCODE/Contents/Developer" >> $GITHUB_ENV
           fi
           xcodebuild -version
           swift -version

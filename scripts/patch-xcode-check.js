@@ -157,11 +157,11 @@ if (fs.existsSync(jsRuntimePath)) {
     console.log('✅ Patched vector.push_back without consuming: label in JavaScriptRuntime.swift');
   }
 
-  // Use static factory .create(context, call, deallocate) to avoid unaccessible initializer on SWIFT_IMMORTAL_REFERENCE
-  if (content.includes('return expo.HostFunctionClosure')) {
-    content = content.replace(/return expo\.HostFunctionClosure(\.create)?\([^)]+\)/g, 'return expo.HostFunctionClosure.create(context, call, deallocate)');
+  // Use free function expo.createHostFunctionClosure(context, call, deallocate)
+  if (content.includes('HostFunctionClosure')) {
+    content = content.replace(/return expo\.(HostFunctionClosure(\.create)?|createHostFunctionClosure)\([^)]+\)/g, 'return expo.createHostFunctionClosure(context, call, deallocate)');
     modified = true;
-    console.log('✅ Patched HostFunctionClosure call to use static factory .create(context, call, deallocate) in JavaScriptRuntime.swift');
+    console.log('✅ Patched HostFunctionClosure call to use expo.createHostFunctionClosure(context, call, deallocate) in JavaScriptRuntime.swift');
   }
 
   if (modified) {
@@ -180,15 +180,20 @@ if (fs.existsSync(taskImmediatePath)) {
   }
 }
 
-// 7. Patch C++ headers: remove `explicit` constructors and add C++17 factory for HostFunctionClosure AFTER `using Closure`
+// 7. Patch C++ headers: remove `explicit` constructors and add C++17 factory and free function for HostFunctionClosure
 const hostClosureH = path.join(__dirname, '..', 'node_modules', 'expo-modules-jsi', 'apple', 'Sources', 'ExpoModulesJSI-Cxx', 'include', 'HostFunctionClosure.h');
 if (fs.existsSync(hostClosureH)) {
   let content = fs.readFileSync(hostClosureH, 'utf8');
   let modified = false;
 
   // Clean out any previous `create` declaration
-  if (content.includes('static inline HostFunctionClosure* _Nonnull create(')) {
+  if (content.includes('HostFunctionClosure* _Nonnull create(')) {
     content = content.replace(/static inline HostFunctionClosure\* _Nonnull create[\s\S]*?\}\s*/g, '');
+    modified = true;
+  }
+  // Clean out any previous `createHostFunctionClosure` declaration
+  if (content.includes('createHostFunctionClosure(')) {
+    content = content.replace(/inline HostFunctionClosure\* _Nonnull createHostFunctionClosure[\s\S]*?\}\s*/g, '');
     modified = true;
   }
 
@@ -197,22 +202,34 @@ if (fs.existsSync(hostClosureH)) {
     modified = true;
   }
 
-  // Insert factory AFTER `using Closure = ...;` so Closure is declared before use!
-  // Also annotate with SWIFT_NAME(init(_:_:_:)) so both .create(...) and constructor calls work
-  const factory = `
-  static inline HostFunctionClosure* _Nonnull create(Context context, Closure closure, Deallocator deallocator)
-    SWIFT_NAME(init(_:_:_:)) {
+  // Insert member factory AFTER `using Closure = ...;`
+  const memberFactory = `
+  static inline HostFunctionClosure* _Nonnull create(Context context, Closure closure, Deallocator deallocator) {
     return new HostFunctionClosure(context, closure, deallocator);
   }
 `;
   if (!content.includes('static inline HostFunctionClosure* _Nonnull create(')) {
-    content = content.replace(/(using Closure = [^;]+;)/, '$1' + factory);
+    content = content.replace(/(using Closure = [^;]+;)/, '$1' + memberFactory);
+    modified = true;
+  }
+
+  // Insert free factory function in namespace expo AFTER class HostFunctionClosure definition
+  const freeFactory = `
+inline HostFunctionClosure* _Nonnull createHostFunctionClosure(
+    RetainedSwiftPointer::Context context,
+    HostFunctionClosure::Closure closure,
+    RetainedSwiftPointer::Deallocator deallocator) {
+  return new HostFunctionClosure(context, closure, deallocator);
+}
+`;
+  if (!content.includes('inline HostFunctionClosure* _Nonnull createHostFunctionClosure(')) {
+    content = content.replace(/(\}\s*SWIFT_IMMORTAL_REFERENCE;[^\n]*)/, '$1\n' + freeFactory);
     modified = true;
   }
 
   if (modified) {
     fs.writeFileSync(hostClosureH, content, 'utf8');
-    console.log('✅ Patched HostFunctionClosure.h with factory and SWIFT_NAME(init(_:_:_:))');
+    console.log('✅ Patched HostFunctionClosure.h with factory methods and free function createHostFunctionClosure');
   }
 }
 
