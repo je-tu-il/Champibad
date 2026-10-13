@@ -157,10 +157,11 @@ if (fs.existsSync(jsRuntimePath)) {
     console.log('✅ Patched vector.push_back without consuming: label in JavaScriptRuntime.swift');
   }
 
-  if (content.includes('return expo.HostFunctionClosure(context, call, deallocate)')) {
-    content = content.replace(/return expo\.HostFunctionClosure\(context, call, deallocate\)/g, 'return expo.HostFunctionClosure(context: context, closure: call, deallocator: deallocate)');
+  // Use static factory .create(context, call, deallocate) to avoid unaccessible initializer on SWIFT_IMMORTAL_REFERENCE
+  if (content.includes('return expo.HostFunctionClosure')) {
+    content = content.replace(/return expo\.HostFunctionClosure(\.create)?\([^)]+\)/g, 'return expo.HostFunctionClosure.create(context, call, deallocate)');
     modified = true;
-    console.log('✅ Patched HostFunctionClosure constructor call with labeled arguments in JavaScriptRuntime.swift');
+    console.log('✅ Patched HostFunctionClosure call to use static factory .create(context, call, deallocate) in JavaScriptRuntime.swift');
   }
 
   if (modified) {
@@ -185,7 +186,7 @@ if (fs.existsSync(hostClosureH)) {
   let content = fs.readFileSync(hostClosureH, 'utf8');
   let modified = false;
 
-  // Clean out any previous `create` declaration before `using Closure`
+  // Clean out any previous `create` declaration
   if (content.includes('static inline HostFunctionClosure* _Nonnull create(')) {
     content = content.replace(/static inline HostFunctionClosure\* _Nonnull create[\s\S]*?\}\s*/g, '');
     modified = true;
@@ -197,8 +198,10 @@ if (fs.existsSync(hostClosureH)) {
   }
 
   // Insert factory AFTER `using Closure = ...;` so Closure is declared before use!
+  // Also annotate with SWIFT_NAME(init(_:_:_:)) so both .create(...) and constructor calls work
   const factory = `
-  static inline HostFunctionClosure* _Nonnull create(Context context, Closure closure, Deallocator deallocator) {
+  static inline HostFunctionClosure* _Nonnull create(Context context, Closure closure, Deallocator deallocator)
+    SWIFT_NAME(init(_:_:_:)) {
     return new HostFunctionClosure(context, closure, deallocator);
   }
 `;
@@ -209,7 +212,7 @@ if (fs.existsSync(hostClosureH)) {
 
   if (modified) {
     fs.writeFileSync(hostClosureH, content, 'utf8');
-    console.log('✅ Patched HostFunctionClosure.h with correctly-ordered factory after Closure typedef');
+    console.log('✅ Patched HostFunctionClosure.h with factory and SWIFT_NAME(init(_:_:_:))');
   }
 }
 
