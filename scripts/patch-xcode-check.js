@@ -22,3 +22,33 @@ if (fs.existsSync(utilsPath)) {
     console.log('ℹ️ utils.rb already patched or check not present');
   }
 }
+
+// 3. Patch Swift Package Manager tools version (downgrade swift-tools-version 6.2 to 6.0 for Swift 6.1 compatibility)
+const packageSwiftFiles = [
+  path.join(__dirname, '..', 'node_modules', 'expo-modules-jsi', 'apple', 'Package.swift'),
+  path.join(__dirname, '..', 'node_modules', '@expo', 'expo-modules-macros-plugin', 'apple', 'Package.swift')
+];
+
+for (const pkgPath of packageSwiftFiles) {
+  if (fs.existsSync(pkgPath)) {
+    let content = fs.readFileSync(pkgPath, 'utf8');
+    let modified = false;
+
+    if (content.includes('swift-tools-version: 6.2')) {
+      content = content.replace(/swift-tools-version:\s*6\.2/g, 'swift-tools-version: 6.0');
+      modified = true;
+    }
+
+    if (content.includes('602.0.0-latest')) {
+      content = content.replace(/602\.0\.0-latest/g, '600.0.0');
+      modified = true;
+    }
+
+    if (modified) {
+      fs.writeFileSync(pkgPath, content, 'utf8');
+      console.log(`✅ Patched Package.swift in ${path.relative(path.join(__dirname, '..'), pkgPath)} (swift-tools-version set to 6.0)`);
+    } else {
+      console.log(`ℹ️ Package.swift in ${path.relative(path.join(__dirname, '..'), pkgPath)} already up to date`);
+    }
+  }
+}
