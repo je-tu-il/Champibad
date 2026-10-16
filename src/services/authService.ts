@@ -9,7 +9,7 @@ const PLAYERS_KEY = '@champibad_players_db';
 export const INITIAL_PLAYERS: Player[] = [
   {
     id: 'user_aurelien_admin',
-    licenseNumber: '07123456',
+    licenseNumber: '00336568',
     firstName: 'Aurélien',
     lastName: 'Reymond',
     email: SUPER_ADMIN_EMAIL,

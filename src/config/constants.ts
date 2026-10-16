@@ -20,7 +20,7 @@ export const DEFAULT_ADMIN_SETTINGS: AdminSettings = {
   },
   
   // Synchronisation des licenciés
-  licenseApiUrl: 'https://api.champibad.fr/licencies',
+  licenseApiUrl: 'https://myffbad.fr/recherche/joueur?search=Champibad',
   lastLicenseSyncTime: Date.now(),
 };
 
