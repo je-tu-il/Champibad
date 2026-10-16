@@ -26,6 +26,43 @@ export class SlotService {
   }
 
   /**
+   * Ajoute un nouveau créneau au club
+   */
+  static async addClubSlot(slotData: Omit<ClubSlot, 'id'>): Promise<ClubSlot[]> {
+    const slots = await this.getClubSlots();
+    const newSlot: ClubSlot = {
+      ...slotData,
+      id: `slot_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+    };
+    const updated = [...slots, newSlot];
+    await this.saveClubSlots(updated);
+    return updated;
+  }
+
+  /**
+   * Modifie un créneau existant
+   */
+  static async updateClubSlot(slot: ClubSlot): Promise<ClubSlot[]> {
+    const slots = await this.getClubSlots();
+    const index = slots.findIndex((s) => s.id === slot.id);
+    if (index !== -1) {
+      slots[index] = slot;
+      await this.saveClubSlots(slots);
+    }
+    return slots;
+  }
+
+  /**
+   * Supprime un créneau du club
+   */
+  static async deleteClubSlot(slotId: string): Promise<ClubSlot[]> {
+    const slots = await this.getClubSlots();
+    const updated = slots.filter((s) => s.id !== slotId);
+    await this.saveClubSlots(updated);
+    return updated;
+  }
+
+  /**
    * Récupère les disponibilités d'un joueur
    */
   static async getPlayerAvailability(userId: string): Promise<PlayerAvailability> {

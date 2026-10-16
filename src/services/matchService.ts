@@ -45,6 +45,45 @@ export class MatchService {
   }
 
   /**
+   * Accepte un défi proposé
+   */
+  static async acceptChallenge(matchId: string): Promise<Match> {
+    const matches = await this.getMatches();
+    const index = matches.findIndex((m) => m.id === matchId);
+    if (index === -1) throw new Error('Match non trouvé');
+
+    matches[index].status = 'ACCEPTED';
+    await AsyncStorage.setItem(MATCHES_STORAGE_KEY, JSON.stringify(matches));
+    return matches[index];
+  }
+
+  /**
+   * Refuse un défi proposé
+   */
+  static async declineChallenge(matchId: string): Promise<Match> {
+    const matches = await this.getMatches();
+    const index = matches.findIndex((m) => m.id === matchId);
+    if (index === -1) throw new Error('Match non trouvé');
+
+    matches[index].status = 'DECLINED';
+    await AsyncStorage.setItem(MATCHES_STORAGE_KEY, JSON.stringify(matches));
+    return matches[index];
+  }
+
+  /**
+   * Annule un défi
+   */
+  static async cancelChallenge(matchId: string): Promise<Match> {
+    const matches = await this.getMatches();
+    const index = matches.findIndex((m) => m.id === matchId);
+    if (index === -1) throw new Error('Match non trouvé');
+
+    matches[index].status = 'CANCELLED';
+    await AsyncStorage.setItem(MATCHES_STORAGE_KEY, JSON.stringify(matches));
+    return matches[index];
+  }
+
+  /**
    * Soumission du score des sets par un joueur -> Passe en PENDING_VALIDATION
    */
   static async submitScore(

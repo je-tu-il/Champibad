@@ -9,11 +9,13 @@ import {
   Switch,
   Alert,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
-import { AdminSettings, Player } from '../types';
+import { AdminSettings, Player, ClubSlot } from '../types';
 import { CashprizeService } from '../services/cashprizeService';
 import { AuthService } from '../services/authService';
 import { LicenseService } from '../services/licenseService';
+import { SlotService } from '../services/slotService';
 
 interface Props {
   currentUser: Player;
@@ -22,6 +24,7 @@ interface Props {
 export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
   const [settings, setSettings] = useState<AdminSettings | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
+  const [clubSlots, setClubSlots] = useState<ClubSlot[]>([]);
   const [syncingApi, setSyncingApi] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -31,17 +34,116 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
   const [newLicense, setNewLicense] = useState('');
   const [newElo, setNewElo] = useState('1200');
 
+  // Modal de modération joueur
+  const [moderatedPlayer, setModeratedPlayer] = useState<Player | null>(null);
+  const [editEloSolo, setEditEloSolo] = useState('');
+  const [suspendDays, setSuspendDays] = useState('7');
+  const [suspendReason, setSuspendReason] = useState('Comportement antisportif');
+  const [chatBanDays, setChatBanDays] = useState('7');
+  const [targetBlockUserId, setTargetBlockUserId] = useState<string>('');
+
+  // Formulaire d'ajout de créneau
+  const [showAddSlot, setShowAddSlot] = useState(false);
+  const [newSlotDay, setNewSlotDay] = useState('Mardi');
+  const [newSlotStart, setNewSlotStart] = useState('18:00');
+  const [newSlotEnd, setNewSlotEnd] = useState('20:00');
+  const [newSlotHasPeak, setNewSlotHasPeak] = useState(false);
+  const [newSlotAllowedStart, setNewSlotAllowedStart] = useState('19:30');
+
   useEffect(() => {
     loadAdminData();
   }, []);
 
   const loadAdminData = async () => {
-    const [sett, pList] = await Promise.all([
+    const [sett, pList, sList] = await Promise.all([
       CashprizeService.getSettings(),
       AuthService.getAllPlayers(),
+      SlotService.getClubSlots(),
     ]);
     setSettings(sett);
     setPlayers(pList);
+    setClubSlots(sList);
+  };
+
+  const handleOpenModeration = (p: Player) => {
+    setModeratedPlayer(p);
+    setEditEloSolo(p.eloSolo.toString());
+    setSuspendDays('7');
+    setSuspendReason('Non-respect des règles du club');
+    setChatBanDays('7');
+    const firstOther = players.find((o) => o.id !== p.id);
+    if (firstOther) setTargetBlockUserId(firstOther.id);
+  };
+
+  const handleApplyElo = async () => {
+    if (!moderatedPlayer) return;
+    const newEloVal = parseInt(editEloSolo, 10);
+    if (isNaN(newEloVal) || newEloVal < 500 || newEloVal > 3000) {
+      Alert.alert('Valeur invalide', 'Veuillez saisir un Elo compris entre 500 et 3000.');
+      return;
+    }
+    const updated = await AuthService.adjustElo(moderatedPlayer.id, newEloVal);
+    setPlayers(updated);
+    const refreshed = updated.find((p) => p.id === moderatedPlayer.id) || null;
+    setModeratedPlayer(refreshed);
+    Alert.alert('Elo mis à jour', `Le classement Elo de ${moderatedPlayer.firstName} est maintenant de ${newEloVal}.`);
+  };
+
+  const handleSuspendPlayer = async () => {
+    if (!moderatedPlayer) return;
+    const days = parseInt(suspendDays, 10) || 7;
+    const reason = suspendReason.trim() || 'Suspension temporaire';
+    const updated = await AuthService.suspendPlayer(moderatedPlayer.id, days, reason);
+    setPlayers(updated);
+    const refreshed = updated.find((p) => p.id === moderatedPlayer.id) || null;
+    setModeratedPlayer(refreshed);
+    Alert.alert('Compte suspendu', `Le compte de ${moderatedPlayer.firstName} a été suspendu pour ${days} jours.`);
+  };
+
+  const handleUnsuspendPlayer = async () => {
+    if (!moderatedPlayer) return;
+    const updated = await AuthService.unsuspendPlayer(moderatedPlayer.id);
+    setPlayers(updated);
+    const refreshed = updated.find((p) => p.id === moderatedPlayer.id) || null;
+    setModeratedPlayer(refreshed);
+    Alert.alert('Suspension levée', `Le compte de ${moderatedPlayer.firstName} est de nouveau actif.`);
+  };
+
+  const handleBanChat = async () => {
+    if (!moderatedPlayer) return;
+    const days = parseInt(chatBanDays, 10) || 7;
+    const updated = await AuthService.banPlayerFromChat(moderatedPlayer.id, days);
+    setPlayers(updated);
+    const refreshed = updated.find((p) => p.id === moderatedPlayer.id) || null;
+    setModeratedPlayer(refreshed);
+    Alert.alert('Chat bloqué', `L'accès au chat a été bloqué pour ${days} jours.`);
+  };
+
+  const handleUnbanChat = async () => {
+    if (!moderatedPlayer) return;
+    const updated = await AuthService.unbanPlayerFromChat(moderatedPlayer.id);
+    setPlayers(updated);
+    const refreshed = updated.find((p) => p.id === moderatedPlayer.id) || null;
+    setModeratedPlayer(refreshed);
+    Alert.alert('Chat débloqué', `L'accès au chat a été réactivé.`);
+  };
+
+  const handleBlockChatWithTarget = async () => {
+    if (!moderatedPlayer || !targetBlockUserId) return;
+    const updated = await AuthService.blockChatWithPlayer(moderatedPlayer.id, targetBlockUserId);
+    setPlayers(updated);
+    const refreshed = updated.find((p) => p.id === moderatedPlayer.id) || null;
+    setModeratedPlayer(refreshed);
+    Alert.alert('Restriction appliquée', 'Le chat entre ces deux joueurs est désormais bloqué.');
+  };
+
+  const handleUnblockChatWithTarget = async (otherId: string) => {
+    if (!moderatedPlayer) return;
+    const updated = await AuthService.unblockChatWithPlayer(moderatedPlayer.id, otherId);
+    setPlayers(updated);
+    const refreshed = updated.find((p) => p.id === moderatedPlayer.id) || null;
+    setModeratedPlayer(refreshed);
+    Alert.alert('Restriction levée', 'La restriction a été retirée.');
   };
 
   const handleAddPlayer = async () => {
@@ -53,7 +155,6 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
     const initialElo = parseInt(newElo, 10) || 1200;
     const cleanLicense = newLicense.trim();
 
-    // 1. Ajouter aux licenciés autorisés
     await LicenseService.addLicensee({
       id: cleanLicense,
       licenseNumber: cleanLicense,
@@ -64,7 +165,6 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
       syncedAt: Date.now(),
     });
 
-    // 2. Ajouter au profil joueur actif
     const newPlayer: Player = {
       id: `user_${Date.now()}`,
       licenseNumber: cleanLicense,
@@ -107,8 +207,8 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
     }
 
     Alert.alert(
-      'Retirer le joueur',
-      `Voulez-vous retirer ${player.firstName} ${player.lastName} du club ?`,
+      'Supprimer le compte',
+      `Voulez-vous supprimer définitivement ${player.firstName} ${player.lastName} du club ?`,
       [
         { text: 'Annuler', style: 'cancel' },
         {
@@ -117,10 +217,65 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
           onPress: async () => {
             const updated = await AuthService.deletePlayer(player.id);
             setPlayers(updated);
+            setModeratedPlayer(null);
           },
         },
       ]
     );
+  };
+
+  // Gestion des créneaux
+  const handleToggleSlotActive = async (slot: ClubSlot) => {
+    const updatedSlot = { ...slot, isActive: !slot.isActive };
+    const updated = await SlotService.updateClubSlot(updatedSlot);
+    setClubSlots(updated);
+  };
+
+  const handleDeleteSlot = (slot: ClubSlot) => {
+    Alert.alert('Supprimer le créneau', `Supprimer le créneau du ${slot.dayName} (${slot.startTime}-${slot.endTime}) ?`, [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Supprimer',
+        style: 'destructive',
+        onPress: async () => {
+          const updated = await SlotService.deleteClubSlot(slot.id);
+          setClubSlots(updated);
+        },
+      },
+    ]);
+  };
+
+  const handleCreateSlot = async () => {
+    if (!newSlotStart.trim() || !newSlotEnd.trim()) {
+      Alert.alert('Erreur', 'Veuillez renseigner les heures de début et de fin.');
+      return;
+    }
+
+    const dayMap: Record<string, number> = {
+      Dimanche: 0,
+      Lundi: 1,
+      Mardi: 2,
+      Mercredi: 3,
+      Jeudi: 4,
+      Vendredi: 5,
+      Samedi: 6,
+    };
+
+    const newSlot = await SlotService.addClubSlot({
+      dayOfWeek: dayMap[newSlotDay] ?? 2,
+      dayName: newSlotDay,
+      label: 'Jeu Libre & Défis',
+      gymnasium: 'Gymnase de Champigneulles',
+      startTime: newSlotStart.trim(),
+      endTime: newSlotEnd.trim(),
+      isActive: true,
+      hasPeakHours: newSlotHasPeak,
+      allowedMatchStartTime: newSlotHasPeak ? newSlotAllowedStart.trim() : undefined,
+    });
+
+    setClubSlots(newSlot);
+    setShowAddSlot(false);
+    Alert.alert('Créneau ajouté !', `Le créneau du ${newSlotDay} a été enregistré.`);
   };
 
   const handleSaveSettings = async () => {
@@ -150,23 +305,6 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
     }
   };
 
-  const handleArchiveSeason = () => {
-    Alert.alert(
-      'Clôturer la saison en cours',
-      'Voulez-vous figer le classement actuel et archiver la saison ?',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Confirmer',
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert('Saison clôturée', 'Les classements ont été archivés.');
-          },
-        },
-      ]
-    );
-  };
-
   if (!settings) {
     return (
       <View style={styles.loadingContainer}>
@@ -181,9 +319,67 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
         <Text style={styles.headerTitle}>Administration</Text>
       </View>
 
-      {/* 1. Formulaire d'ajout rapide d'un joueur */}
+      {/* 1. Liste des Joueurs existants & Modération */}
       <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>Ajouter un joueur</Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Membres du Club (Cliquez pour gérer)</Text>
+          <View style={styles.countBadge}>
+            <Text style={styles.countText}>{players.length}</Text>
+          </View>
+        </View>
+
+        {players.map((p, index) => {
+          const isSuspended = p.suspendedUntil && p.suspendedUntil > Date.now();
+          const isChatBanned = p.chatBannedUntil && p.chatBannedUntil > Date.now();
+
+          return (
+            <TouchableOpacity
+              key={p.id}
+              style={[
+                styles.playerRow,
+                index === players.length - 1 && styles.playerRowLast,
+              ]}
+              onPress={() => handleOpenModeration(p)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.playerInfo}>
+                <View style={styles.playerNameRow}>
+                  <Text style={styles.playerAvatar}>{p.avatarEmoji || '🏸'}</Text>
+                  <Text style={styles.playerRowName}>
+                    {p.firstName} {p.lastName}
+                  </Text>
+                  {p.role === 'ADMIN' && (
+                    <View style={styles.adminMiniBadge}>
+                      <Text style={styles.adminMiniBadgeText}>Admin</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.playerLicense}>
+                  {p.eloSolo} Elo • Lic: {p.licenseNumber}
+                </Text>
+              </View>
+
+              <View style={styles.badgesRow}>
+                {isSuspended && (
+                  <View style={styles.statusBadgeSuspended}>
+                    <Text style={styles.statusBadgeText}>Suspendu</Text>
+                  </View>
+                )}
+                {isChatBanned && (
+                  <View style={styles.statusBadgeChatBanned}>
+                    <Text style={styles.statusBadgeText}>Chat ban</Text>
+                  </View>
+                )}
+                <Text style={styles.chevron}>›</Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* 2. Formulaire d'ajout rapide d'un joueur */}
+      <View style={styles.sectionCard}>
+        <Text style={styles.sectionTitle}>Inscrire un joueur manuellement</Text>
 
         <View style={styles.formRow}>
           <View style={styles.inputCol}>
@@ -234,85 +430,123 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
         </View>
 
         <TouchableOpacity style={styles.addPlayerBtn} onPress={handleAddPlayer}>
-          <Text style={styles.addPlayerText}>Ajouter</Text>
+          <Text style={styles.addPlayerText}>Ajouter au club</Text>
         </TouchableOpacity>
       </View>
 
-      {/* 2. Liste des Joueurs existants */}
+      {/* 3. Personnalisation des Créneaux du Club */}
       <View style={styles.sectionCard}>
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Joueurs inscrits</Text>
-          <View style={styles.countBadge}>
-            <Text style={styles.countText}>{players.length}</Text>
-          </View>
+          <Text style={styles.sectionTitle}>Créneaux du Club Disponibles</Text>
+          <TouchableOpacity
+            style={styles.addSlotBtn}
+            onPress={() => setShowAddSlot(!showAddSlot)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.addSlotBtnText}>{showAddSlot ? 'Fermer' : '+ Ajouter'}</Text>
+          </TouchableOpacity>
         </View>
 
-        {players.map((p, index) => (
-          <View
-            key={p.id}
-            style={[
-              styles.playerRow,
-              index === players.length - 1 && styles.playerRowLast,
-            ]}
-          >
-            <View style={styles.playerInfo}>
-              <Text style={styles.playerRowName}>
-                {p.firstName} {p.lastName}
-              </Text>
-              <Text style={styles.playerLicense}>Licence : {p.licenseNumber}</Text>
+        {showAddSlot && (
+          <View style={styles.addSlotForm}>
+            <Text style={styles.inputLabel}>Jour de la semaine</Text>
+            <View style={styles.daySelectorRow}>
+              {['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'].map((d) => (
+                <TouchableOpacity
+                  key={d}
+                  style={[styles.dayChoice, newSlotDay === d && styles.activeDayChoice]}
+                  onPress={() => setNewSlotDay(d)}
+                >
+                  <Text style={[styles.dayChoiceText, newSlotDay === d && styles.activeDayChoiceText]}>
+                    {d.slice(0, 3)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
 
-            {p.id !== currentUser.id && (
-              <TouchableOpacity
-                style={styles.deleteBtn}
-                onPress={() => handleDeletePlayer(p)}
-              >
-                <Text style={styles.deleteBtnText}>Retirer</Text>
-              </TouchableOpacity>
+            <View style={styles.formRow}>
+              <View style={styles.inputCol}>
+                <Text style={styles.inputLabel}>Heure Début</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newSlotStart}
+                  onChangeText={setNewSlotStart}
+                  placeholder="18:00"
+                  placeholderTextColor="#8E8E93"
+                />
+              </View>
+              <View style={styles.inputCol}>
+                <Text style={styles.inputLabel}>Heure Fin</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newSlotEnd}
+                  onChangeText={setNewSlotEnd}
+                  placeholder="20:00"
+                  placeholderTextColor="#8E8E93"
+                />
+              </View>
+            </View>
+
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>Heure de pointe (défis restreints)</Text>
+              <Switch
+                value={newSlotHasPeak}
+                onValueChange={setNewSlotHasPeak}
+                trackColor={{ false: '#E5E5EA', true: '#34C759' }}
+              />
+            </View>
+
+            {newSlotHasPeak && (
+              <View style={styles.formRow}>
+                <View style={styles.inputCol}>
+                  <Text style={styles.inputLabel}>Défis autorisés après :</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={newSlotAllowedStart}
+                    onChangeText={setNewSlotAllowedStart}
+                    placeholder="19:30"
+                    placeholderTextColor="#8E8E93"
+                  />
+                </View>
+              </View>
             )}
+
+            <TouchableOpacity style={styles.saveSlotBtn} onPress={handleCreateSlot}>
+              <Text style={styles.saveSlotBtnText}>Enregistrer le créneau</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {clubSlots.map((s, idx) => (
+          <View key={s.id || idx} style={styles.slotRow}>
+            <View style={styles.slotInfo}>
+              <Text style={styles.slotDayName}>
+                {s.dayName} ({s.startTime} - {s.endTime})
+              </Text>
+              {s.hasPeakHours && (
+                <Text style={styles.slotPeakNotice}>
+                  ⚠️ Forte affluence : Défis dès {s.allowedMatchStartTime}
+                </Text>
+              )}
+            </View>
+
+            <View style={styles.slotActions}>
+              <Switch
+                value={s.isActive}
+                onValueChange={() => handleToggleSlotActive(s)}
+                trackColor={{ false: '#E5E5EA', true: '#34C759' }}
+              />
+              <TouchableOpacity onPress={() => handleDeleteSlot(s)} style={styles.slotDeleteBtn}>
+                <Text style={styles.slotDeleteText}>✕</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         ))}
       </View>
 
-      {/* 3. Règles d'Écart de Niveau & Handicaps */}
-      <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>Handicap</Text>
-
-        <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>Mode Handicap activé</Text>
-          <Switch
-            value={settings.handicapModeEnabled}
-            onValueChange={(val) => setSettings({ ...settings, handicapModeEnabled: val })}
-            trackColor={{ false: '#E5E5EA', true: '#34C759' }}
-          />
-        </View>
-
-        <Text style={styles.inputLabel}>Seuil d'écart d'Elo max recommandé</Text>
-        <TextInput
-          style={styles.input}
-          keyboardType="numeric"
-          value={settings.maxEloGapForDirectMatch.toString()}
-          onChangeText={(v) =>
-            setSettings({ ...settings, maxEloGapForDirectMatch: parseInt(v, 10) || 0 })
-          }
-          placeholderTextColor="#8E8E93"
-        />
-
-        <Text style={[styles.inputLabel, styles.inputLabelSpacing]}>Points de pénalité de départ (-X pts)</Text>
-        <TextInput
-          style={styles.input}
-          keyboardType="numeric"
-          value={settings.handicapPointsDelta.toString()}
-          onChangeText={(v) =>
-            setSettings({ ...settings, handicapPointsDelta: parseInt(v, 10) || 0 })
-          }
-          placeholderTextColor="#8E8E93"
-        />
-      </View>
-
       {/* 4. Synchronisation API des licenciés */}
       <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>Synchronisation API</Text>
+        <Text style={styles.sectionTitle}>Synchronisation API des licenciés</Text>
 
         <Text style={styles.inputLabel}>URL de l'API / Webhook du club</Text>
         <TextInput
@@ -320,7 +554,7 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
           value={settings.licenseApiUrl}
           onChangeText={(v) => setSettings({ ...settings, licenseApiUrl: v })}
           autoCapitalize="none"
-          placeholder="https://..."
+          placeholder="https://votre-club.fr/api/licencies"
           placeholderTextColor="#8E8E93"
         />
 
@@ -332,17 +566,8 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
           {syncingApi ? (
             <ActivityIndicator color="#FFFFFF" size="small" />
           ) : (
-            <Text style={styles.syncBtnText}>Synchroniser</Text>
+            <Text style={styles.syncBtnText}>Synchroniser les licenciés</Text>
           )}
-        </TouchableOpacity>
-      </View>
-
-      {/* 5. Clôture de saison */}
-      <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>Clôture de saison</Text>
-
-        <TouchableOpacity style={styles.archiveBtn} onPress={handleArchiveSeason}>
-          <Text style={styles.archiveBtnText}>Clôturer la saison en cours</Text>
         </TouchableOpacity>
       </View>
 
@@ -352,8 +577,180 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
         disabled={saving}
         onPress={handleSaveSettings}
       >
-        <Text style={styles.saveAllText}>Enregistrer</Text>
+        <Text style={styles.saveAllText}>{saving ? 'Sauvegarde...' : 'Sauvegarder les paramètres'}</Text>
       </TouchableOpacity>
+
+      {/* MODAL DE MODÉRATION ET D'AJUSTEMENT JOUEUR */}
+      <Modal visible={!!moderatedPlayer} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.moderationCard}>
+            {moderatedPlayer && (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <View style={styles.modHeader}>
+                  <Text style={styles.modAvatar}>{moderatedPlayer.avatarEmoji || '🏸'}</Text>
+                  <Text style={styles.modName}>
+                    {moderatedPlayer.firstName} {moderatedPlayer.lastName}
+                  </Text>
+                  <Text style={styles.modSub}>Licence n° {moderatedPlayer.licenseNumber}</Text>
+                </View>
+
+                {/* 1. Ajustement d'Elo */}
+                <View style={styles.modSection}>
+                  <Text style={styles.modSectionTitle}>Ajuster le classement Elo</Text>
+                  <View style={styles.formRow}>
+                    <TextInput
+                      style={[styles.input, { flex: 1 }]}
+                      keyboardType="numeric"
+                      value={editEloSolo}
+                      onChangeText={setEditEloSolo}
+                      placeholder="Nouveau score Elo"
+                      placeholderTextColor="#8E8E93"
+                    />
+                    <TouchableOpacity style={styles.modApplyBtn} onPress={handleApplyElo}>
+                      <Text style={styles.modApplyBtnText}>Appliquer</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* 2. Suspension de Compte */}
+                <View style={styles.modSection}>
+                  <Text style={styles.modSectionTitle}>Suspension de Compte</Text>
+                  {moderatedPlayer.suspendedUntil && moderatedPlayer.suspendedUntil > Date.now() ? (
+                    <View style={styles.activeBanCard}>
+                      <Text style={styles.activeBanText}>
+                        Compte suspendu jusqu'au {new Date(moderatedPlayer.suspendedUntil).toLocaleDateString('fr-FR')}.
+                      </Text>
+                      {moderatedPlayer.suspensionReason && (
+                        <Text style={styles.activeBanReason}>Raison : {moderatedPlayer.suspensionReason}</Text>
+                      )}
+                      <TouchableOpacity style={styles.unbanBtn} onPress={handleUnsuspendPlayer}>
+                        <Text style={styles.unbanBtnText}>Lever la suspension</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <View>
+                      <View style={styles.formRow}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.inputLabel}>Durée (jours)</Text>
+                          <TextInput
+                            style={styles.input}
+                            keyboardType="numeric"
+                            value={suspendDays}
+                            onChangeText={setSuspendDays}
+                          />
+                        </View>
+                      </View>
+                      <Text style={styles.inputLabel}>Raison de la suspension</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={suspendReason}
+                        onChangeText={setSuspendReason}
+                        placeholder="ex: Comportement antisportif"
+                        placeholderTextColor="#8E8E93"
+                      />
+                      <TouchableOpacity style={styles.suspendBtn} onPress={handleSuspendPlayer}>
+                        <Text style={styles.suspendBtnText}>Suspendre le compte</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+
+                {/* 3. Blocage de Chat */}
+                <View style={styles.modSection}>
+                  <Text style={styles.modSectionTitle}>Modération du Chat</Text>
+                  {moderatedPlayer.chatBannedUntil && moderatedPlayer.chatBannedUntil > Date.now() ? (
+                    <View style={styles.activeBanCard}>
+                      <Text style={styles.activeBanText}>
+                        Chat banni jusqu'au {new Date(moderatedPlayer.chatBannedUntil).toLocaleDateString('fr-FR')}.
+                      </Text>
+                      <TouchableOpacity style={styles.unbanBtn} onPress={handleUnbanChat}>
+                        <Text style={styles.unbanBtnText}>Réactiver le chat</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <View style={styles.formRow}>
+                      <TextInput
+                        style={[styles.input, { flex: 1 }]}
+                        keyboardType="numeric"
+                        value={chatBanDays}
+                        onChangeText={setChatBanDays}
+                        placeholder="Jours"
+                        placeholderTextColor="#8E8E93"
+                      />
+                      <TouchableOpacity style={styles.chatBanBtn} onPress={handleBanChat}>
+                        <Text style={styles.chatBanBtnText}>Bannir du chat</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {/* Restreindre avec un membre spécifique */}
+                  <Text style={[styles.inputLabel, { marginTop: 10 }]}>Restreindre chat avec un joueur précis :</Text>
+                  <View style={styles.formRow}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
+                      {players
+                        .filter((p) => p.id !== moderatedPlayer.id)
+                        .map((p) => {
+                          const isSelected = targetBlockUserId === p.id;
+                          return (
+                            <TouchableOpacity
+                              key={p.id}
+                              style={[styles.miniChip, isSelected && styles.miniChipActive]}
+                              onPress={() => setTargetBlockUserId(p.id)}
+                            >
+                              <Text style={[styles.miniChipText, isSelected && styles.miniChipTextActive]}>
+                                {p.firstName}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                    </ScrollView>
+                  </View>
+                  <TouchableOpacity style={styles.restrictBtn} onPress={handleBlockChatWithTarget}>
+                    <Text style={styles.restrictBtnText}>Bloquer la discussion avec ce joueur</Text>
+                  </TouchableOpacity>
+
+                  {/* Liste des restrictions individuelles existantes */}
+                  {moderatedPlayer.blockedChatUserIds && moderatedPlayer.blockedChatUserIds.length > 0 && (
+                    <View style={{ marginTop: 10 }}>
+                      <Text style={styles.inputLabel}>Discussions actuellement bloquées :</Text>
+                      {moderatedPlayer.blockedChatUserIds.map((bid) => {
+                        const blockedP = players.find((p) => p.id === bid);
+                        return (
+                          <View key={bid} style={styles.blockedUserRow}>
+                            <Text style={styles.blockedUserName}>
+                              {blockedP ? `${blockedP.firstName} ${blockedP.lastName}` : bid}
+                            </Text>
+                            <TouchableOpacity onPress={() => handleUnblockChatWithTarget(bid)}>
+                              <Text style={styles.unblockText}>Débloquer</Text>
+                            </TouchableOpacity>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  )}
+                </View>
+
+                {/* 4. Action de suppression */}
+                <View style={[styles.modSection, { borderBottomWidth: 0 }]}>
+                  <TouchableOpacity
+                    style={styles.deleteAccountBtn}
+                    onPress={() => handleDeletePlayer(moderatedPlayer)}
+                  >
+                    <Text style={styles.deleteAccountText}>Supprimer définitivement ce joueur</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.closeModBtn}
+                  onPress={() => setModeratedPlayer(null)}
+                >
+                  <Text style={styles.closeModText}>Fermer</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };
@@ -364,41 +761,39 @@ const styles = StyleSheet.create({
     backgroundColor: '#F2F2F7',
   },
   content: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    padding: 16,
     paddingBottom: 40,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F2F2F7',
   },
   header: {
-    paddingBottom: 16,
+    marginBottom: 16,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: '600',
+    fontSize: 24,
+    fontWeight: '700',
     color: '#000000',
-    letterSpacing: 0.35,
+    letterSpacing: -0.5,
   },
   sectionCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
     elevation: 2,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   sectionTitle: {
     fontSize: 13,
@@ -406,7 +801,6 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 10,
   },
   countBadge: {
     backgroundColor: '#F2F2F7',
@@ -432,20 +826,17 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     marginBottom: 4,
   },
-  inputLabelSpacing: {
-    marginTop: 12,
-  },
   input: {
     backgroundColor: '#F2F2F7',
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingVertical: 10,
     fontSize: 15,
     color: '#000000',
   },
   addPlayerBtn: {
     backgroundColor: '#007AFF',
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 6,
@@ -459,36 +850,117 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderBottomWidth: 0.5,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
+    borderBottomColor: 'rgba(0,0,0,0.08)',
   },
   playerRowLast: {
     borderBottomWidth: 0,
-    paddingBottom: 4,
+    paddingBottom: 2,
   },
   playerInfo: {
     flex: 1,
-    marginRight: 10,
+  },
+  playerNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 2,
+  },
+  playerAvatar: {
+    fontSize: 16,
   },
   playerRowName: {
     fontSize: 15,
     fontWeight: '500',
     color: '#000000',
-    marginBottom: 2,
+  },
+  adminMiniBadge: {
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  adminMiniBadgeText: {
+    color: '#007AFF',
+    fontSize: 10,
+    fontWeight: '600',
   },
   playerLicense: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#8E8E93',
   },
-  deleteBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 8,
+  badgesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
-  deleteBtnText: {
-    color: '#FF3B30',
-    fontSize: 14,
-    fontWeight: '500',
+  statusBadgeSuspended: {
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  statusBadgeChatBanned: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  statusBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#DC2626',
+  },
+  chevron: {
+    fontSize: 18,
+    color: '#C7C7CC',
+    marginLeft: 4,
+  },
+  addSlotBtn: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  addSlotBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  addSlotForm: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  daySelectorRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 10,
+  },
+  dayChoice: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  activeDayChoice: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  dayChoiceText: {
+    fontSize: 12,
+    color: '#1C1C1E',
+  },
+  activeDayChoiceText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
   switchRow: {
     flexDirection: 'row',
@@ -496,41 +968,74 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     borderBottomWidth: 0.5,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
-    marginBottom: 14,
+    borderBottomColor: 'rgba(0,0,0,0.08)',
+    marginBottom: 10,
   },
   switchLabel: {
-    fontSize: 15,
+    fontSize: 14,
     color: '#000000',
+  },
+  saveSlotBtn: {
+    backgroundColor: '#34C759',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  saveSlotBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  slotRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0,0,0,0.08)',
+  },
+  slotInfo: {
+    flex: 1,
+  },
+  slotDayName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1C1C1E',
+  },
+  slotPeakNotice: {
+    fontSize: 11,
+    color: '#FF9500',
+    marginTop: 2,
+  },
+  slotActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  slotDeleteBtn: {
+    padding: 6,
+  },
+  slotDeleteText: {
+    color: '#FF3B30',
+    fontSize: 16,
+    fontWeight: '600',
   },
   syncBtn: {
     backgroundColor: '#007AFF',
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
-    marginTop: 14,
+    marginTop: 12,
   },
   syncBtnText: {
     color: '#FFFFFF',
     fontWeight: '600',
     fontSize: 15,
   },
-  archiveBtn: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 0.5,
-    borderColor: '#FF3B30',
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  archiveBtnText: {
-    color: '#FF3B30',
-    fontWeight: '600',
-    fontSize: 15,
-  },
   saveAllBtn: {
     backgroundColor: '#34C759',
-    paddingVertical: 16,
+    paddingVertical: 15,
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 4,
@@ -543,5 +1048,193 @@ const styles = StyleSheet.create({
   },
   btnDisabled: {
     opacity: 0.5,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  moderationCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    width: '100%',
+    maxWidth: 420,
+    maxHeight: '90%',
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  modHeader: {
+    alignItems: 'center',
+    marginBottom: 16,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
+    paddingBottom: 14,
+  },
+  modAvatar: {
+    fontSize: 40,
+    marginBottom: 6,
+  },
+  modName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#000000',
+  },
+  modSub: {
+    fontSize: 12,
+    color: '#8E8E93',
+    marginTop: 2,
+  },
+  modSection: {
+    marginBottom: 16,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0,0,0,0.08)',
+    paddingBottom: 14,
+  },
+  modSectionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1C1C1E',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  modApplyBtn: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modApplyBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  activeBanCard: {
+    backgroundColor: '#FEE2E2',
+    borderRadius: 8,
+    padding: 10,
+    marginVertical: 4,
+  },
+  activeBanText: {
+    fontSize: 12,
+    color: '#DC2626',
+    fontWeight: '600',
+  },
+  activeBanReason: {
+    fontSize: 11,
+    color: '#991B1B',
+    marginTop: 2,
+  },
+  unbanBtn: {
+    backgroundColor: '#DC2626',
+    borderRadius: 6,
+    paddingVertical: 6,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  unbanBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  suspendBtn: {
+    backgroundColor: '#FF3B30',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  suspendBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  chatBanBtn: {
+    backgroundColor: '#FF9500',
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  chatBanBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  miniChip: {
+    backgroundColor: '#F2F2F7',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    marginRight: 6,
+  },
+  miniChipActive: {
+    backgroundColor: '#007AFF',
+  },
+  miniChipText: {
+    fontSize: 12,
+    color: '#1C1C1E',
+  },
+  miniChipTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  restrictBtn: {
+    backgroundColor: '#F2F2F7',
+    paddingVertical: 9,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  restrictBtnText: {
+    color: '#1C1C1E',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  blockedUserRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  blockedUserName: {
+    fontSize: 12,
+    color: '#374151',
+  },
+  unblockText: {
+    fontSize: 12,
+    color: '#007AFF',
+    fontWeight: '500',
+  },
+  deleteAccountBtn: {
+    backgroundColor: '#FFF1F2',
+    borderWidth: 1,
+    borderColor: '#FECDD3',
+    paddingVertical: 11,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  deleteAccountText: {
+    color: '#E11D48',
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  closeModBtn: {
+    backgroundColor: '#F2F2F7',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  closeModText: {
+    color: '#1C1C1E',
+    fontWeight: '600',
+    fontSize: 14,
   },
 });

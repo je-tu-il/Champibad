@@ -273,13 +273,163 @@ export class AuthService {
   }
 
   /**
-   * Supprime un joueur
+   * Supprime un joueur de la base de données
    */
   static async deletePlayer(playerId: string): Promise<Player[]> {
     const players = await this.getAllPlayers();
     const updated = players.filter((p) => p.id !== playerId);
     await this.saveAllPlayers(updated);
     return updated;
+  }
+
+  /**
+   * Ajuste manuellement l'Elo d'un joueur (par l'admin)
+   */
+  static async adjustElo(playerId: string, newElo: number): Promise<Player[]> {
+    const players = await this.getAllPlayers();
+    const index = players.findIndex((p) => p.id === playerId);
+    if (index !== -1) {
+      players[index].eloSolo = newElo;
+      players[index].highestEloSolo = Math.max(players[index].highestEloSolo || 1200, newElo);
+      await this.saveAllPlayers(players);
+      const current = await this.getCurrentUser();
+      if (current?.id === playerId) {
+        await this.setCurrentUser(players[index]);
+      }
+    }
+    return players;
+  }
+
+  /**
+   * Suspend le compte d'un joueur pour X jours avec un motif
+   */
+  static async suspendPlayer(playerId: string, days: number, reason: string): Promise<Player[]> {
+    const players = await this.getAllPlayers();
+    const index = players.findIndex((p) => p.id === playerId);
+    if (index !== -1) {
+      players[index].suspendedUntil = Date.now() + days * 24 * 60 * 60 * 1000;
+      players[index].suspensionReason = reason;
+      await this.saveAllPlayers(players);
+      const current = await this.getCurrentUser();
+      if (current?.id === playerId) {
+        await this.setCurrentUser(players[index]);
+      }
+    }
+    return players;
+  }
+
+  /**
+   * Lève la suspension du compte
+   */
+  static async unsuspendPlayer(playerId: string): Promise<Player[]> {
+    const players = await this.getAllPlayers();
+    const index = players.findIndex((p) => p.id === playerId);
+    if (index !== -1) {
+      delete players[index].suspendedUntil;
+      delete players[index].suspensionReason;
+      await this.saveAllPlayers(players);
+      const current = await this.getCurrentUser();
+      if (current?.id === playerId) {
+        await this.setCurrentUser(players[index]);
+      }
+    }
+    return players;
+  }
+
+  /**
+   * Bloque l'accès au chat global pour X jours
+   */
+  static async banPlayerFromChat(playerId: string, days: number): Promise<Player[]> {
+    const players = await this.getAllPlayers();
+    const index = players.findIndex((p) => p.id === playerId);
+    if (index !== -1) {
+      players[index].chatBannedUntil = Date.now() + days * 24 * 60 * 60 * 1000;
+      await this.saveAllPlayers(players);
+      const current = await this.getCurrentUser();
+      if (current?.id === playerId) {
+        await this.setCurrentUser(players[index]);
+      }
+    }
+    return players;
+  }
+
+  /**
+   * Lève le blocage du chat global
+   */
+  static async unbanPlayerFromChat(playerId: string): Promise<Player[]> {
+    const players = await this.getAllPlayers();
+    const index = players.findIndex((p) => p.id === playerId);
+    if (index !== -1) {
+      delete players[index].chatBannedUntil;
+      await this.saveAllPlayers(players);
+      const current = await this.getCurrentUser();
+      if (current?.id === playerId) {
+        await this.setCurrentUser(players[index]);
+      }
+    }
+    return players;
+  }
+
+  /**
+   * Bloque la messagerie entre deux joueurs spécifiques
+   */
+  static async blockChatWithPlayer(playerId: string, targetUserId: string): Promise<Player[]> {
+    const players = await this.getAllPlayers();
+    const index = players.findIndex((p) => p.id === playerId);
+    if (index !== -1) {
+      const existing = players[index].blockedChatUserIds || [];
+      if (!existing.includes(targetUserId)) {
+        players[index].blockedChatUserIds = [...existing, targetUserId];
+        await this.saveAllPlayers(players);
+        const current = await this.getCurrentUser();
+        if (current?.id === playerId) {
+          await this.setCurrentUser(players[index]);
+        }
+      }
+    }
+    return players;
+  }
+
+  /**
+   * Lève le blocage de messagerie avec un joueur spécifique
+   */
+  static async unblockChatWithPlayer(playerId: string, targetUserId: string): Promise<Player[]> {
+    const players = await this.getAllPlayers();
+    const index = players.findIndex((p) => p.id === playerId);
+    if (index !== -1) {
+      const existing = players[index].blockedChatUserIds || [];
+      players[index].blockedChatUserIds = existing.filter((id) => id !== targetUserId);
+      await this.saveAllPlayers(players);
+      const current = await this.getCurrentUser();
+      if (current?.id === playerId) {
+        await this.setCurrentUser(players[index]);
+      }
+    }
+    return players;
+  }
+
+  /**
+   * Personnalisation du profil par le joueur lui-même
+   */
+  static async updateProfile(
+    userId: string,
+    data: { firstName?: string; lastName?: string; avatarEmoji?: string; bio?: string }
+  ): Promise<Player> {
+    const players = await this.getAllPlayers();
+    const index = players.findIndex((p) => p.id === userId);
+    if (index === -1) throw new Error('Joueur introuvable');
+
+    players[index] = {
+      ...players[index],
+      firstName: data.firstName !== undefined ? data.firstName.trim() : players[index].firstName,
+      lastName: data.lastName !== undefined ? data.lastName.trim() : players[index].lastName,
+      avatarEmoji: data.avatarEmoji !== undefined ? data.avatarEmoji : players[index].avatarEmoji,
+      bio: data.bio !== undefined ? data.bio.trim() : players[index].bio,
+    };
+
+    await this.saveAllPlayers(players);
+    await this.setCurrentUser(players[index]);
+    return players[index];
   }
 
   /**

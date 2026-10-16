@@ -83,7 +83,7 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
         <Text style={styles.inputLabel}>Prénom</Text>
         <TextInput
           style={styles.input}
-          placeholder="ex: Aurélien"
+          placeholder="ex: Thomas"
           placeholderTextColor="#8E8E93"
           value={firstName}
           onChangeText={setFirstName}
@@ -92,7 +92,7 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
         <Text style={styles.inputLabel}>Nom</Text>
         <TextInput
           style={styles.input}
-          placeholder="ex: Reymond"
+          placeholder="ex: Dubois"
           placeholderTextColor="#8E8E93"
           value={lastName}
           onChangeText={setLastName}
@@ -101,7 +101,7 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
         <Text style={styles.inputLabel}>N° Licence</Text>
         <TextInput
           style={styles.input}
-          placeholder="ex: 07123456"
+          placeholder="ex: 07234567"
           placeholderTextColor="#8E8E93"
           value={licenseNumber}
           onChangeText={setLicenseNumber}
@@ -122,22 +122,8 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
       </View>
 
       <View style={styles.quickLoginContainer}>
-        <Text style={styles.quickLoginTitle}>Connexion rapide</Text>
+        <Text style={styles.quickLoginTitle}>Profil de test</Text>
         <View style={styles.quickRow}>
-          <TouchableOpacity
-            style={styles.quickBtn}
-            onPress={() =>
-              handleQuickLogin({
-                first: 'Aurélien',
-                last: 'Reymond',
-                license: '07123456',
-                email: SUPER_ADMIN_EMAIL,
-              })
-            }
-          >
-            <Text style={styles.quickBtnText}>Admin</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity
             style={styles.quickBtn}
             onPress={() =>
@@ -149,7 +135,7 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
               })
             }
           >
-            <Text style={styles.quickBtnText}>Joueur</Text>
+            <Text style={styles.quickBtnText}>🏸 Joueur Test (Thomas)</Text>
           </TouchableOpacity>
         </View>
       </View>

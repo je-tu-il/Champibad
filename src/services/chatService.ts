@@ -1,11 +1,59 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { EncryptedMessage, Player } from '../types';
+import { EncryptedMessage, Player, GlobalChatMessage } from '../types';
 import { CryptoService } from './cryptoService';
 import { AuthService } from './authService';
 
 const MESSAGES_KEY = '@champibad_encrypted_messages';
+const GLOBAL_MESSAGES_KEY = '@champibad_global_messages';
 
 export class ChatService {
+  /**
+   * Récupère les messages du salon global du club
+   */
+  static async getGlobalMessages(): Promise<GlobalChatMessage[]> {
+    const raw = await AsyncStorage.getItem(GLOBAL_MESSAGES_KEY);
+    if (!raw) {
+      const initial: GlobalChatMessage[] = [
+        {
+          id: 'welcome_1',
+          senderId: 'system',
+          senderName: 'Club Champibad',
+          senderAvatar: '🏸',
+          senderRole: 'ADMIN',
+          text: 'Bienvenue sur le salon officiel de Champibad ! Vous pouvez échanger ici sur les séances, organiser des matchs et suivre la vie du club.',
+          createdAt: Date.now() - 3600000 * 24,
+        },
+      ];
+      await AsyncStorage.setItem(GLOBAL_MESSAGES_KEY, JSON.stringify(initial));
+      return initial;
+    }
+    return JSON.parse(raw);
+  }
+
+  /**
+   * Envoie un message sur le chat global
+   */
+  static async sendGlobalMessage(sender: Player, text: string): Promise<GlobalChatMessage> {
+    if (sender.chatBannedUntil && sender.chatBannedUntil > Date.now()) {
+      const expDate = new Date(sender.chatBannedUntil).toLocaleDateString('fr-FR');
+      throw new Error(`Votre accès au chat est suspendu jusqu'au ${expDate}.`);
+    }
+
+    const messages = await this.getGlobalMessages();
+    const newMsg: GlobalChatMessage = {
+      id: `global_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+      senderId: sender.id,
+      senderName: `${sender.firstName} ${sender.lastName}`,
+      senderAvatar: sender.avatarEmoji || '🏸',
+      senderRole: sender.role,
+      text: text.trim(),
+      createdAt: Date.now(),
+    };
+    messages.push(newMsg);
+    await AsyncStorage.setItem(GLOBAL_MESSAGES_KEY, JSON.stringify(messages));
+    return newMsg;
+  }
+
   /**
    * Identifiant canonique de conversation entre deux joueurs
    */
@@ -37,19 +85,28 @@ export class ChatService {
    * Envoie un message chiffré de bout en bout (E2EE)
    */
   static async sendMessage(
-    senderId: string,
+    sender: Player,
     recipientId: string,
     plainText: string
   ): Promise<EncryptedMessage> {
-    const conversationId = this.getConversationId(senderId, recipientId);
-    const secretKey = CryptoService.deriveConversationKey(senderId, recipientId);
+    if (sender.chatBannedUntil && sender.chatBannedUntil > Date.now()) {
+      const expDate = new Date(sender.chatBannedUntil).toLocaleDateString('fr-FR');
+      throw new Error(`Votre accès au chat est suspendu jusqu'au ${expDate}.`);
+    }
+
+    if (sender.blockedChatUserIds?.includes(recipientId)) {
+      throw new Error(`La messagerie avec ce joueur a été restreinte par l'administrateur.`);
+    }
+
+    const conversationId = this.getConversationId(sender.id, recipientId);
+    const secretKey = CryptoService.deriveConversationKey(sender.id, recipientId);
 
     const { encryptedContent, iv } = CryptoService.encryptMessage(plainText, secretKey);
 
     const newMessage: EncryptedMessage = {
       id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
       conversationId,
-      senderId,
+      senderId: sender.id,
       recipientId,
       encryptedContent,
       iv,

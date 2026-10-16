@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { MatchService } from '../services/matchService';
 import { AuthService } from '../services/authService';
 import { SlotService } from '../services/slotService';
 import { EloService } from '../services/eloService';
+import { HandicapService } from '../services/handicapService';
 import { MatchCard } from '../components/MatchCard';
 
 interface Props {
@@ -23,6 +24,7 @@ interface Props {
   onMatchValidated: () => void;
   targetOpponent?: Player | null;
   onClearTargetOpponent?: () => void;
+  onPressPlayer?: (player: Player) => void;
 }
 
 export const MatchesScreen: React.FC<Props> = ({
@@ -30,6 +32,7 @@ export const MatchesScreen: React.FC<Props> = ({
   onMatchValidated,
   targetOpponent,
   onClearTargetOpponent,
+  onPressPlayer,
 }) => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [allPlayers, setAllPlayers] = useState<Player[]>([]);
@@ -37,21 +40,74 @@ export const MatchesScreen: React.FC<Props> = ({
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'VALIDATED'>('ALL');
 
-  // Modal Saisie de Score
+  // Modal Saisie de Score - scores non préremplis (vides)
   const [selectedMatchForScore, setSelectedMatchForScore] = useState<Match | null>(null);
-  const [s1P1, setS1P1] = useState('21');
-  const [s1P2, setS1P2] = useState('18');
-  const [s2P1, setS2P1] = useState('19');
-  const [s2P2, setS2P2] = useState('21');
-  const [s3P1, setS3P1] = useState('21');
-  const [s3P2, setS3P2] = useState('16');
-  const [hasThirdSet, setHasThirdSet] = useState(true);
+  const [s1P1, setS1P1] = useState('');
+  const [s1P2, setS1P2] = useState('');
+  const [s2P1, setS2P1] = useState('');
+  const [s2P2, setS2P2] = useState('');
+  const [s3P1, setS3P1] = useState('');
+  const [s3P2, setS3P2] = useState('');
+
+  // Refs pour l'auto-passage automatique d'une case à l'autre
+  const s1P1Ref = useRef<TextInput>(null);
+  const s1P2Ref = useRef<TextInput>(null);
+  const s2P1Ref = useRef<TextInput>(null);
+  const s2P2Ref = useRef<TextInput>(null);
+  const s3P1Ref = useRef<TextInput>(null);
+  const s3P2Ref = useRef<TextInput>(null);
 
   // Modal Nouveau Défi
   const [showChallengeModal, setShowChallengeModal] = useState(false);
   const [selectedOpponentId, setSelectedOpponentId] = useState<string>('');
   const [selectedSlotId, setSelectedSlotId] = useState<string>('');
   const [commonSlots, setCommonSlots] = useState<any[]>([]);
+
+  // Détection automatique du 3ème set :
+  // Un set est gagné si un joueur atteint >= 21 et a plus de points que l'adversaire
+  const num1_1 = parseInt(s1P1, 10) || 0;
+  const num1_2 = parseInt(s1P2, 10) || 0;
+  const num2_1 = parseInt(s2P1, 10) || 0;
+  const num2_2 = parseInt(s2P2, 10) || 0;
+
+  const p1WonSet1 = num1_1 >= 21 && num1_1 > num1_2;
+  const p2WonSet1 = num1_2 >= 21 && num1_2 > num1_1;
+  const p1WonSet2 = num2_1 >= 21 && num2_1 > num2_2;
+  const p2WonSet2 = num2_2 >= 21 && num2_2 > num2_1;
+
+  // 21 deux fois du même côté (victoire 2-0 nette) -> pas de 3ème set
+  const isTwoZero = (p1WonSet1 && p1WonSet2) || (p2WonSet1 && p2WonSet2);
+
+  // 21 des 2 côtés (1 set remporté par chacun -> 1-1) -> 3ème set décisif obligatoire
+  const isOneAll = (p1WonSet1 && p2WonSet2) || (p2WonSet1 && p1WonSet2);
+
+  const handleScoreChange = (
+    text: string,
+    setter: (val: string) => void,
+    nextRef?: React.RefObject<TextInput | null>
+  ) => {
+    const clean = text.replace(/[^0-9]/g, '');
+    setter(clean);
+    if (!clean) return;
+    const num = parseInt(clean, 10);
+    // Auto-passage dès que 2 chiffres sont saisis OU dès qu'un chiffre > 2 est tapé (ex: 3..9)
+    if (clean.length >= 2 || num > 2) {
+      nextRef?.current?.focus();
+    }
+  };
+
+  const handleOpenScoreModal = (match: Match) => {
+    setSelectedMatchForScore(match);
+    setS1P1('');
+    setS1P2('');
+    setS2P1('');
+    setS2P2('');
+    setS3P1('');
+    setS3P2('');
+    setTimeout(() => {
+      s1P1Ref.current?.focus();
+    }, 150);
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -114,8 +170,33 @@ export const MatchesScreen: React.FC<Props> = ({
     }
   };
 
+  const handleAcceptChallenge = async (matchId: string) => {
+    try {
+      await MatchService.acceptChallenge(matchId);
+      Alert.alert('Défi accepté ! 🏸', 'Préparez vos raquettes pour la rencontre.');
+      await loadData();
+    } catch (e: any) {
+      Alert.alert('Erreur', e.message);
+    }
+  };
+
+  const handleDeclineChallenge = async (matchId: string) => {
+    try {
+      await MatchService.declineChallenge(matchId);
+      Alert.alert('Défi refusé', 'La proposition a été déclinée.');
+      await loadData();
+    } catch (e: any) {
+      Alert.alert('Erreur', e.message);
+    }
+  };
+
   const handleConfirmSubmitScores = async () => {
     if (!selectedMatchForScore) return;
+
+    if (!s1P1 || !s1P2 || !s2P1 || !s2P2) {
+      Alert.alert('Scores incomplets', 'Veuillez renseigner les scores des deux premiers sets.');
+      return;
+    }
 
     const sets: MatchSet[] = [
       {
@@ -130,7 +211,11 @@ export const MatchesScreen: React.FC<Props> = ({
       },
     ];
 
-    if (hasThirdSet) {
+    if (isOneAll) {
+      if (!s3P1 || !s3P2) {
+        Alert.alert('3ème set requis', 'Les deux joueurs sont à 1 set chacun. Veuillez saisir le score du 3ème set décisif.');
+        return;
+      }
       sets.push({
         setNumber: 3,
         player1Score: parseInt(s3P1, 10) || 0,
@@ -160,10 +245,11 @@ export const MatchesScreen: React.FC<Props> = ({
     const opponent = allPlayers.find((p) => p.id === selectedOpponentId);
     if (!opponent) return;
 
-    const handicapEval = EloService.evaluateHandicap(
-      currentUser.eloSolo,
-      opponent.eloSolo,
-      300
+    // Algorithme intelligent multi-facteurs (Elo, volume matchs, H2H, malus antérieurs, serveur)
+    const intelligentEval = HandicapService.evaluateIntelligentHandicap(
+      currentUser,
+      opponent,
+      matches
     );
 
     const slot = clubSlots.find((s) => s.id === selectedSlotId);
@@ -177,14 +263,18 @@ export const MatchesScreen: React.FC<Props> = ({
         scheduledSlotId: slot?.id,
         scheduledDate: slot?.dayName,
         scheduledTime: slot?.hasPeakHours ? slot.allowedMatchStartTime : slot?.startTime,
-        handicapApplied: handicapEval.suggestedHandicap,
-        handicapDetails: handicapEval.details,
+        handicapApplied: intelligentEval.handicapType,
+        handicapDetails: intelligentEval.summary,
+        handicapExplanation: intelligentEval.details,
+        handicapPlayer1Points: intelligentEval.player1Points,
+        handicapPlayer2Points: intelligentEval.player2Points,
+        firstServerId: intelligentEval.firstServerId,
         sets: [],
       });
 
       setShowChallengeModal(false);
       if (onClearTargetOpponent) onClearTargetOpponent();
-      Alert.alert('Défi envoyé !', `Votre défi contre ${opponent.firstName} a été créé.`);
+      Alert.alert('Défi envoyé ! 🏸', `Votre proposition a été envoyée à ${opponent.firstName}.\n\n${intelligentEval.details}`);
       await loadData();
     } catch (e: any) {
       Alert.alert('Erreur', e.message);
@@ -264,7 +354,10 @@ export const MatchesScreen: React.FC<Props> = ({
             allPlayers={allPlayers}
             onValidate={handleValidateScore}
             onContest={handleContestScore}
-            onSubmitScores={(m) => setSelectedMatchForScore(m)}
+            onSubmitScores={handleOpenScoreModal}
+            onAcceptChallenge={handleAcceptChallenge}
+            onDeclineChallenge={handleDeclineChallenge}
+            onPressPlayer={onPressPlayer}
           />
         )}
       />
@@ -275,25 +368,31 @@ export const MatchesScreen: React.FC<Props> = ({
           <View style={styles.scoreModalCard}>
             <Text style={styles.modalTitle}>Saisie du Score</Text>
             <Text style={styles.modalSubtitle}>
-              Indiquez les scores des sets pour transmission à l'adversaire.
+              Saisissez les scores. Le curseur passe automatiquement à la case suivante.
             </Text>
 
             {/* Set 1 */}
             <View style={styles.setRowInput}>
               <Text style={styles.setLabel}>Set 1</Text>
               <TextInput
+                ref={s1P1Ref}
                 style={styles.scoreInput}
                 value={s1P1}
-                onChangeText={setS1P1}
+                onChangeText={(val) => handleScoreChange(val, setS1P1, s1P2Ref)}
                 keyboardType="numeric"
+                placeholder="0"
+                placeholderTextColor="#C7C7CC"
                 selectTextOnFocus
               />
               <Text style={styles.setDash}>-</Text>
               <TextInput
+                ref={s1P2Ref}
                 style={styles.scoreInput}
                 value={s1P2}
-                onChangeText={setS1P2}
+                onChangeText={(val) => handleScoreChange(val, setS1P2, s2P1Ref)}
                 keyboardType="numeric"
+                placeholder="0"
+                placeholderTextColor="#C7C7CC"
                 selectTextOnFocus
               />
             </View>
@@ -302,53 +401,78 @@ export const MatchesScreen: React.FC<Props> = ({
             <View style={styles.setRowInput}>
               <Text style={styles.setLabel}>Set 2</Text>
               <TextInput
+                ref={s2P1Ref}
                 style={styles.scoreInput}
                 value={s2P1}
-                onChangeText={setS2P1}
+                onChangeText={(val) => handleScoreChange(val, setS2P1, s2P2Ref)}
                 keyboardType="numeric"
+                placeholder="0"
+                placeholderTextColor="#C7C7CC"
                 selectTextOnFocus
               />
               <Text style={styles.setDash}>-</Text>
               <TextInput
+                ref={s2P2Ref}
                 style={styles.scoreInput}
                 value={s2P2}
-                onChangeText={setS2P2}
+                onChangeText={(val) => handleScoreChange(val, setS2P2, isOneAll ? s3P1Ref : undefined)}
                 keyboardType="numeric"
+                placeholder="0"
+                placeholderTextColor="#C7C7CC"
                 selectTextOnFocus
               />
             </View>
 
-            {/* Set 3 optionnel */}
-            {hasThirdSet && (
-              <View style={styles.setRowInput}>
-                <Text style={styles.setLabel}>Set 3</Text>
-                <TextInput
-                  style={styles.scoreInput}
-                  value={s3P1}
-                  onChangeText={setS3P1}
-                  keyboardType="numeric"
-                  selectTextOnFocus
-                />
-                <Text style={styles.setDash}>-</Text>
-                <TextInput
-                  style={styles.scoreInput}
-                  value={s3P2}
-                  onChangeText={setS3P2}
-                  keyboardType="numeric"
-                  selectTextOnFocus
-                />
+            {/* Détection 21 2 fois du même côté (2-0) vs 21 des 2 côtés (1-1) */}
+            {isTwoZero && (
+              <View style={styles.autoSetNoticeBox}>
+                <Text style={styles.autoSetNoticeText}>
+                  ✓ Victoire nette en 2 sets (2-0). Aucun 3ème set requis.
+                </Text>
               </View>
             )}
 
-            <TouchableOpacity
-              style={styles.toggleSetBtn}
-              onPress={() => setHasThirdSet(!hasThirdSet)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.toggleSetText}>
-                {hasThirdSet ? 'Supprimer le 3ème set' : '+ Ajouter un 3ème set décisif'}
-              </Text>
-            </TouchableOpacity>
+            {isOneAll && (
+              <>
+                <View style={styles.decisiveSetNoticeBox}>
+                  <Text style={styles.decisiveSetNoticeText}>
+                    🔥 Égalité 1 set partout ! 3ème set décisif :
+                  </Text>
+                </View>
+                <View style={styles.setRowInput}>
+                  <Text style={styles.setLabel}>Set 3</Text>
+                  <TextInput
+                    ref={s3P1Ref}
+                    style={styles.scoreInput}
+                    value={s3P1}
+                    onChangeText={(val) => handleScoreChange(val, setS3P1, s3P2Ref)}
+                    keyboardType="numeric"
+                    placeholder="0"
+                    placeholderTextColor="#C7C7CC"
+                    selectTextOnFocus
+                  />
+                  <Text style={styles.setDash}>-</Text>
+                  <TextInput
+                    ref={s3P2Ref}
+                    style={styles.scoreInput}
+                    value={s3P2}
+                    onChangeText={(val) => handleScoreChange(val, setS3P2)}
+                    keyboardType="numeric"
+                    placeholder="0"
+                    placeholderTextColor="#C7C7CC"
+                    selectTextOnFocus
+                  />
+                </View>
+              </>
+            )}
+
+            {!isTwoZero && !isOneAll && (
+              <View style={styles.infoSetNoticeBox}>
+                <Text style={styles.infoSetNoticeText}>
+                  ℹ️ Renseignez les 2 sets. Le 3ème set s'affichera uniquement si 1-1 (21 des deux côtés).
+                </Text>
+              </View>
+            )}
 
             <View style={styles.modalButtonsStack}>
               <TouchableOpacity
@@ -381,7 +505,7 @@ export const MatchesScreen: React.FC<Props> = ({
             >
               <Text style={styles.modalTitle}>Proposer un Défi 🏸</Text>
               <Text style={styles.modalSubtitle}>
-                Choisissez un adversaire et un créneau commun du club Champibad.
+                Choisissez un adversaire et un créneau de jeu.
               </Text>
 
               <Text style={styles.fieldLabel}>Adversaire</Text>
@@ -431,6 +555,53 @@ export const MatchesScreen: React.FC<Props> = ({
                     );
                   })}
               </ScrollView>
+
+              {/* Aperçu Algorithmique du Handicap & Premier Serveur */}
+              {(() => {
+                const opponent = allPlayers.find((p) => p.id === selectedOpponentId);
+                if (!opponent) return null;
+                const evalData = HandicapService.evaluateIntelligentHandicap(
+                  currentUser,
+                  opponent,
+                  matches
+                );
+                return (
+                  <View style={styles.intelligentCard}>
+                    <View style={styles.intelligentHeader}>
+                      <Text style={styles.intelligentTitle}>⚖️ Équilibrage Intelligent</Text>
+                      <View
+                        style={[
+                          styles.intelligentBadge,
+                          {
+                            backgroundColor: evalData.hasHandicap
+                              ? 'rgba(255, 149, 0, 0.15)'
+                              : 'rgba(52, 199, 89, 0.15)',
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.intelligentBadgeText,
+                            {
+                              color: evalData.hasHandicap ? '#D97706' : '#248A3D',
+                            },
+                          ]}
+                        >
+                          {evalData.hasHandicap ? 'Handicap Actif' : 'Match Équilibré'}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <Text style={styles.intelligentSummary}>{evalData.summary}</Text>
+                    <Text style={styles.intelligentDetails}>{evalData.details}</Text>
+
+                    <View style={styles.serverRow}>
+                      <Text style={styles.serverLabel}>Premier serveur désigné :</Text>
+                      <Text style={styles.serverValue}>🏸 {evalData.firstServerName}</Text>
+                    </View>
+                  </View>
+                );
+              })()}
 
               <Text style={styles.fieldLabel}>Créneau de Badminton suggéré</Text>
               <View style={styles.slotsBox}>
@@ -768,4 +939,98 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 15,
   },
+  autoSetNoticeBox: {
+    backgroundColor: '#E8F5E9',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 12,
+  },
+  autoSetNoticeText: {
+    fontSize: 13,
+    color: '#2E7D32',
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  decisiveSetNoticeBox: {
+    backgroundColor: '#FFF3E0',
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 10,
+  },
+  decisiveSetNoticeText: {
+    fontSize: 13,
+    color: '#E65100',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  infoSetNoticeBox: {
+    backgroundColor: '#F2F2F7',
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 12,
+  },
+  infoSetNoticeText: {
+    fontSize: 12,
+    color: '#8E8E93',
+    textAlign: 'center',
+  },
+  intelligentCard: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+  },
+  intelligentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  intelligentTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  intelligentBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  intelligentBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  intelligentSummary: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 4,
+  },
+  intelligentDetails: {
+    fontSize: 12,
+    color: '#6B7280',
+    lineHeight: 17,
+    marginBottom: 8,
+  },
+  serverRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderTopWidth: 0.5,
+    borderTopColor: '#E5E7EB',
+    paddingTop: 6,
+  },
+  serverLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
+  serverValue: {
+    fontSize: 12,
+    color: '#111827',
+    fontWeight: '600',
+  },
 });
+

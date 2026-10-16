@@ -4,27 +4,27 @@ import { Player } from '../types';
 
 interface Props {
   currentUser: Player | null;
-  onLogout: () => void;
+  onLogout?: () => void;
+  onPressProfile?: () => void;
   onWatchAd?: () => void;
 }
 
-export const Header: React.FC<Props> = ({ currentUser, onLogout }) => {
+export const Header: React.FC<Props> = ({ currentUser, onPressProfile }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.brandTitle}>Champibad</Text>
 
       {currentUser && (
-        <View style={styles.userSection}>
+        <TouchableOpacity
+          style={styles.userSection}
+          onPress={onPressProfile}
+          activeOpacity={0.7}
+        >
+          <View style={styles.avatarMini}>
+            <Text style={styles.avatarMiniText}>{currentUser.avatarEmoji || '🏸'}</Text>
+          </View>
           <Text style={styles.userName}>{currentUser.firstName}</Text>
-          <TouchableOpacity
-            style={styles.logoutBtn}
-            onPress={onLogout}
-            activeOpacity={0.7}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={styles.logoutIcon}>✕</Text>
-          </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
       )}
     </View>
   );
@@ -50,25 +50,25 @@ const styles = StyleSheet.create({
   userSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-  },
-  userName: {
-    color: '#8E8E93',
-    fontSize: 14,
-    fontWeight: '400',
-  },
-  logoutBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    gap: 8,
+    paddingVertical: 2,
+    paddingHorizontal: 8,
+    borderRadius: 16,
     backgroundColor: '#F2F2F7',
+  },
+  avatarMini: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoutIcon: {
-    color: '#8E8E93',
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: -1,
+  avatarMiniText: {
+    fontSize: 14,
+  },
+  userName: {
+    color: '#000000',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

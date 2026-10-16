@@ -13,6 +13,7 @@ import { AuthService } from '../services/authService';
 interface Props {
   currentUser: Player;
   onChallengePlayer: (player: Player, mode: GameMode) => void;
+  onPressPlayer?: (player: Player) => void;
 }
 
 const getEloColor = (elo: number): string => {
@@ -23,8 +24,11 @@ const getEloColor = (elo: number): string => {
   return '#8E8E93';
 };
 
-export const LeaderboardScreen: React.FC<Props> = ({ currentUser, onChallengePlayer }) => {
-  const [mode, setMode] = useState<GameMode>('SOLO');
+export const LeaderboardScreen: React.FC<Props> = ({
+  currentUser,
+  onChallengePlayer,
+  onPressPlayer,
+}) => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -39,45 +43,14 @@ export const LeaderboardScreen: React.FC<Props> = ({ currentUser, onChallengePla
     loadData();
   }, []);
 
-  const sortedPlayers = [...players].sort((a, b) =>
-    mode === 'SOLO' ? b.eloSolo - a.eloSolo : b.eloDouble - a.eloDouble
-  );
+  const sortedPlayers = [...players].sort((a, b) => b.eloSolo - a.eloSolo);
 
   return (
     <View style={styles.container}>
-      {/* Sélecteur de mode 1v1 / 2v2 (Segmented Control style iOS) */}
+      {/* En-tête épuré Apple */}
       <View style={styles.header}>
-        <View style={styles.segmentedControl}>
-          <TouchableOpacity
-            style={[styles.segment, mode === 'SOLO' && styles.segmentActive]}
-            onPress={() => setMode('SOLO')}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={[
-                styles.segmentText,
-                mode === 'SOLO' && styles.segmentTextActive,
-              ]}
-            >
-              1v1
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.segment, mode === 'DOUBLE' && styles.segmentActive]}
-            onPress={() => setMode('DOUBLE')}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={[
-                styles.segmentText,
-                mode === 'DOUBLE' && styles.segmentTextActive,
-              ]}
-            >
-              2v2
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.headerTitle}>Classement Club</Text>
+        <Text style={styles.headerSub}>{sortedPlayers.length} joueurs</Text>
       </View>
 
       {/* Liste des joueurs */}
@@ -96,18 +69,19 @@ export const LeaderboardScreen: React.FC<Props> = ({ currentUser, onChallengePla
         renderItem={({ item, index }) => {
           const rank = index + 1;
           const isCurrentUser = item.id === currentUser.id;
-          const currentElo = mode === 'SOLO' ? item.eloSolo : item.eloDouble;
-          const prevElo =
-            mode === 'SOLO' ? item.previousDayEloSolo : item.previousDayEloDouble;
+          const currentElo = item.eloSolo;
+          const prevElo = item.previousDayEloSolo;
           const eloDelta = prevElo ? currentElo - prevElo : 0;
 
           return (
-            <View
+            <TouchableOpacity
               style={[
                 styles.playerCard,
                 rank === 1 && styles.firstRankCard,
                 isCurrentUser && styles.currentUserCard,
               ]}
+              onPress={() => onPressPlayer && onPressPlayer(item)}
+              activeOpacity={0.7}
             >
               {/* Rang & Delta */}
               <View style={styles.rankBox}>
@@ -129,6 +103,7 @@ export const LeaderboardScreen: React.FC<Props> = ({ currentUser, onChallengePla
               {/* Infos joueur */}
               <View style={styles.playerInfo}>
                 <View style={styles.nameRow}>
+                  <Text style={styles.avatarPill}>{item.avatarEmoji || '🏸'}</Text>
                   <Text style={styles.playerName} numberOfLines={1}>
                     {item.firstName} {item.lastName}
                   </Text>
@@ -146,14 +121,14 @@ export const LeaderboardScreen: React.FC<Props> = ({ currentUser, onChallengePla
                 {!isCurrentUser && (
                   <TouchableOpacity
                     style={styles.challengeBtn}
-                    onPress={() => onChallengePlayer(item, mode)}
+                    onPress={() => onChallengePlayer(item, 'SOLO')}
                     activeOpacity={0.7}
                   >
                     <Text style={styles.challengeBtnText}>Défier</Text>
                   </TouchableOpacity>
                 )}
               </View>
-            </View>
+            </TouchableOpacity>
           );
         }}
       />
@@ -169,39 +144,26 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderBottomWidth: 0.5,
     borderBottomColor: 'rgba(0, 0, 0, 0.1)',
-  },
-  segmentedControl: {
     flexDirection: 'row',
-    backgroundColor: '#F2F2F7',
-    borderRadius: 8,
-    padding: 2,
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
   },
-  segment: {
-    flex: 1,
-    paddingVertical: 6,
-    borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  segmentActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.12,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  segmentText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#8E8E93',
-  },
-  segmentTextActive: {
-    color: '#000000',
+  headerTitle: {
+    fontSize: 20,
     fontWeight: '600',
+    color: '#000000',
+  },
+  headerSub: {
+    fontSize: 13,
+    color: '#8E8E93',
+    fontWeight: '400',
+  },
+  avatarPill: {
+    fontSize: 16,
+    marginRight: 2,
   },
   listContent: {
     paddingHorizontal: 16,

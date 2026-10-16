@@ -53,6 +53,16 @@ export interface Player {
   friends: string[]; // User IDs
   blockedUsers: string[]; // User IDs
   
+  // Profil & personnalisation
+  avatarEmoji?: string; // ex: '🏸', '⚡', '🔥', '🏆', etc.
+  bio?: string;
+
+  // Modération & sanctions admin
+  suspendedUntil?: number; // timestamp d'expiration de la suspension du compte
+  suspensionReason?: string; // motif de suspension (ex: blessure, comportement, etc.)
+  chatBannedUntil?: number; // timestamp d'expiration du bannissement chat global
+  blockedChatUserIds?: string[]; // IDs des joueurs avec qui le chat est restreint par l'admin
+
   // Clés E2EE
   publicKey?: string;
   
@@ -110,9 +120,13 @@ export interface Match {
   scheduledDate?: string; // 'YYYY-MM-DD'
   scheduledTime?: string; // '21:15'
   
-  // Handicap
+  // Handicap intelligent & équilibrage
   handicapApplied: HandicapType;
-  handicapDetails?: string; // ex: '-10 pts au départ pour le joueur 1' ou 'Sans les couloirs'
+  handicapDetails?: string; // ex: '-4 pts pour Joueur 1, +4 pts pour Joueur 2'
+  handicapPlayer1Points?: number; // Malus (négatif) ou bonus (positif)
+  handicapPlayer2Points?: number; // Malus (négatif) ou bonus (positif)
+  firstServerId?: string; // Joueur désigné par l'algorithme pour servir le 1er point
+  handicapExplanation?: string; // Justification détaillée calculée par l'algorithme
   
   // Scores
   sets: MatchSet[];
@@ -128,6 +142,29 @@ export interface Match {
   status: MatchStatus;
   createdAt: number;
   validatedAt?: number;
+}
+
+export interface HandicapEvaluation {
+  hasHandicap: boolean;
+  handicapType: HandicapType;
+  player1Points: number; // e.g. -3
+  player2Points: number; // e.g. +3
+  firstServerId: string; // ID du joueur qui commence au service
+  firstServerName: string;
+  summary: string; // Description courte
+  details: string; // Explication pédagogique complète
+  confidenceFactor: number; // de 0 à 1 basé sur la fiabilité des données
+  headToHeadSummary: string; // Résumé des confrontations directes
+}
+
+export interface GlobalChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  senderAvatar?: string;
+  senderRole?: 'PLAYER' | 'ADMIN';
+  text: string;
+  createdAt: number;
 }
 
 export interface Season {

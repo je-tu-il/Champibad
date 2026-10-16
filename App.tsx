@@ -8,8 +8,9 @@ import {
   StatusBar,
   Alert,
 } from 'react-native';
-import { Player, GameMode } from './src/types';
+import { Player, GameMode, Match } from './src/types';
 import { AuthService } from './src/services/authService';
+import { MatchService } from './src/services/matchService';
 import { SUPER_ADMIN_EMAIL } from './src/config/constants';
 import { Header } from './src/components/Header';
 import { AuthScreen } from './src/screens/AuthScreen';
@@ -18,6 +19,7 @@ import { MatchesScreen } from './src/screens/MatchesScreen';
 import { SlotsScreen } from './src/screens/SlotsScreen';
 import { ChatScreen } from './src/screens/ChatScreen';
 import { AdminScreen } from './src/screens/AdminScreen';
+import { PlayerProfileModal } from './src/components/PlayerProfileModal';
 
 type TabKey = 'LEADERBOARD' | 'MATCHES' | 'SLOTS' | 'CHAT' | 'ADMIN';
 
@@ -25,6 +27,9 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<Player | null>(null);
   const [currentTab, setCurrentTab] = useState<TabKey>('LEADERBOARD');
   const [targetOpponentForChallenge, setTargetOpponentForChallenge] = useState<Player | null>(null);
+  const [selectedProfilePlayer, setSelectedProfilePlayer] = useState<Player | null>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [allMatches, setAllMatches] = useState<Match[]>([]);
 
   useEffect(() => {
     checkActiveSession();
@@ -34,16 +39,28 @@ export default function App() {
     const user = await AuthService.getCurrentUser();
     if (user) {
       setCurrentUser(user);
+      loadMatches(user.id);
+    }
+  };
+
+  const loadMatches = async (userId: string) => {
+    try {
+      const ms = await MatchService.getMatchesForPlayer(userId);
+      setAllMatches(ms);
+    } catch (e) {
+      console.error(e);
     }
   };
 
   const handleLogout = async () => {
-    Alert.alert('Déconnexion', 'Êtes-vous sûr de vouloir vous déconnecter ?', [
+    Alert.alert('Déconnexion', 'Êtes-vous sûr de vouloir vous déconnecter de Champibad ?', [
       { text: 'Annuler', style: 'cancel' },
       {
         text: 'Déconnexion',
         style: 'destructive',
         onPress: async () => {
+          setShowProfileModal(false);
+          setSelectedProfilePlayer(null);
           await AuthService.logout();
           setCurrentUser(null);
           setCurrentTab('LEADERBOARD');
@@ -52,12 +69,18 @@ export default function App() {
     ]);
   };
 
-  const handleChallengeFromLeaderboard = (player: Player, mode: GameMode) => {
+  const handleOpenProfile = (player: Player) => {
+    setSelectedProfilePlayer(player);
+    setShowProfileModal(true);
+  };
+
+  const handleChallengeFromLeaderboard = (player: Player, _mode: GameMode) => {
     setTargetOpponentForChallenge(player);
     setCurrentTab('MATCHES');
   };
 
   const handleMatchValidated = () => {
+    if (currentUser) loadMatches(currentUser.id);
     Alert.alert('Match Validé ! 🏸', 'Les scores et les classements Elo ont été mis à jour.');
   };
 
@@ -69,7 +92,12 @@ export default function App() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-        <AuthScreen onLoginSuccess={(player) => setCurrentUser(player)} />
+        <AuthScreen
+          onLoginSuccess={(player) => {
+            setCurrentUser(player);
+            loadMatches(player.id);
+          }}
+        />
       </SafeAreaView>
     );
   }
@@ -78,10 +106,10 @@ export default function App() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* En-tête Apple épuré */}
+      {/* En-tête épuré avec profil cliquable (sans croix de déconnexion) */}
       <Header
         currentUser={currentUser}
-        onLogout={handleLogout}
+        onPressProfile={() => handleOpenProfile(currentUser)}
       />
 
       {/* Contenu de l'onglet actif */}
@@ -90,6 +118,7 @@ export default function App() {
           <LeaderboardScreen
             currentUser={currentUser}
             onChallengePlayer={handleChallengeFromLeaderboard}
+            onPressPlayer={handleOpenProfile}
           />
         )}
         {currentTab === 'MATCHES' && (
@@ -98,6 +127,7 @@ export default function App() {
             onMatchValidated={handleMatchValidated}
             targetOpponent={targetOpponentForChallenge}
             onClearTargetOpponent={() => setTargetOpponentForChallenge(null)}
+            onPressPlayer={handleOpenProfile}
           />
         )}
         {currentTab === 'SLOTS' && <SlotsScreen currentUser={currentUser} />}
@@ -105,6 +135,7 @@ export default function App() {
           <ChatScreen
             currentUser={currentUser}
             onUserUpdated={(u) => setCurrentUser(u)}
+            onPressPlayer={handleOpenProfile}
           />
         )}
         {currentTab === 'ADMIN' && isAdmin && (
@@ -171,6 +202,34 @@ export default function App() {
           </TouchableOpacity>
         )}
       </View>
+
+      {/* Modal Profil Joueur & Déconnexion exclusive */}
+      <PlayerProfileModal
+        visible={showProfileModal}
+        player={selectedProfilePlayer}
+        currentUser={currentUser}
+        allMatches={allMatches}
+        onClose={() => {
+          setShowProfileModal(false);
+          setSelectedProfilePlayer(null);
+        }}
+        onLogout={handleLogout}
+        onChallenge={(p) => {
+          setShowProfileModal(false);
+          setSelectedProfilePlayer(null);
+          setTargetOpponentForChallenge(p);
+          setCurrentTab('MATCHES');
+        }}
+        onSendMessage={(_p) => {
+          setShowProfileModal(false);
+          setSelectedProfilePlayer(null);
+          setCurrentTab('CHAT');
+        }}
+        onProfileUpdated={(updated) => {
+          setCurrentUser(updated);
+          setSelectedProfilePlayer(updated);
+        }}
+      />
     </SafeAreaView>
   );
 }

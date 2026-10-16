@@ -9,6 +9,9 @@ interface Props {
   onValidate?: (matchId: string) => void;
   onContest?: (matchId: string) => void;
   onSubmitScores?: (match: Match) => void;
+  onAcceptChallenge?: (matchId: string) => void;
+  onDeclineChallenge?: (matchId: string) => void;
+  onPressPlayer?: (player: Player) => void;
 }
 
 export const MatchCard: React.FC<Props> = ({
@@ -18,6 +21,9 @@ export const MatchCard: React.FC<Props> = ({
   onValidate,
   onContest,
   onSubmitScores,
+  onAcceptChallenge,
+  onDeclineChallenge,
+  onPressPlayer,
 }) => {
   const p1 = allPlayers.find((p) => p.id === match.player1Id);
   const p2 = allPlayers.find((p) => p.id === match.player2Id);
@@ -29,13 +35,17 @@ export const MatchCard: React.FC<Props> = ({
   const isUserP2 = currentUser.id === match.player2Id;
   const isParticipant = isUserP1 || isUserP2;
 
+  // Défi reçu en attente d'acceptation par l'adversaire
+  const isPendingChallengeForUser = match.status === 'PROPOSED' && isUserP2;
+  const isPendingChallengeSentByUser = match.status === 'PROPOSED' && isUserP1;
+
   const needsValidationFromUser =
     match.status === 'PENDING_VALIDATION' &&
     match.submittedBy !== currentUser.id &&
     isParticipant;
 
   const canSubmitScore =
-    (match.status === 'ACCEPTED' || match.status === 'PROPOSED') &&
+    match.status === 'ACCEPTED' &&
     isParticipant;
 
   const isP1Winner = match.winnerId === match.player1Id;
@@ -89,7 +99,11 @@ export const MatchCard: React.FC<Props> = ({
       <View style={styles.playersRow}>
         {/* Joueur 1 */}
         <View style={styles.playerCol}>
-          <View style={styles.nameContainer}>
+          <TouchableOpacity
+            style={styles.nameContainer}
+            onPress={() => p1 && onPressPlayer && onPressPlayer(p1)}
+            activeOpacity={0.7}
+          >
             <Text
               style={[styles.playerName, isP1Winner && styles.winnerName]}
               numberOfLines={1}
@@ -97,7 +111,7 @@ export const MatchCard: React.FC<Props> = ({
               {p1Name}
             </Text>
             {isP1Winner && <Text style={styles.winnerCheck}>✓</Text>}
-          </View>
+          </TouchableOpacity>
           {match.eloDeltaPlayer1 !== undefined && (
             <View
               style={[
@@ -155,7 +169,11 @@ export const MatchCard: React.FC<Props> = ({
 
         {/* Joueur 2 */}
         <View style={styles.playerCol}>
-          <View style={styles.nameContainer}>
+          <TouchableOpacity
+            style={styles.nameContainer}
+            onPress={() => p2 && onPressPlayer && onPressPlayer(p2)}
+            activeOpacity={0.7}
+          >
             <Text
               style={[styles.playerName, isP2Winner && styles.winnerName]}
               numberOfLines={1}
@@ -163,7 +181,7 @@ export const MatchCard: React.FC<Props> = ({
               {p2Name}
             </Text>
             {isP2Winner && <Text style={styles.winnerCheck}>✓</Text>}
-          </View>
+          </TouchableOpacity>
           {match.eloDeltaPlayer2 !== undefined && (
             <View
               style={[
@@ -186,7 +204,63 @@ export const MatchCard: React.FC<Props> = ({
       </View>
 
 
-      {/* Actions de validation */}
+      {/* Affichage des malus & handicap équilibré */}
+      {match.handicapApplied !== 'NONE' && (match.handicapDetails || match.handicapExplanation) && (
+        <View style={styles.handicapBox}>
+          <Text style={styles.handicapTitle}>
+            ⚖️ {match.handicapDetails || 'Handicap appliqué'}
+          </Text>
+          {match.firstServerId && (
+            <Text style={styles.firstServerText}>
+              Premier service : {match.firstServerId === match.player1Id ? p1Name : p2Name}
+            </Text>
+          )}
+        </View>
+      )}
+
+      {/* Défi reçu en attente d'acceptation par l'utilisateur */}
+      {isPendingChallengeForUser && (
+        <View style={styles.challengeBox}>
+          <Text style={styles.challengeNotice}>
+            🏸 {p1Name} vous a défié sur ce créneau !
+          </Text>
+          <View style={styles.buttonsRow}>
+            <TouchableOpacity
+              style={styles.acceptButton}
+              onPress={() => onAcceptChallenge && onAcceptChallenge(match.id)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.acceptButtonText}>✓ Accepter le défi</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.declineButton}
+              onPress={() => onDeclineChallenge && onDeclineChallenge(match.id)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.declineButtonText}>✕ Refuser</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* Défi envoyé par l'utilisateur en attente */}
+      {isPendingChallengeSentByUser && (
+        <View style={styles.sentChallengeBox}>
+          <Text style={styles.sentChallengeText}>
+            ⏳ Défi envoyé • En attente de la réponse de {p2Name}
+          </Text>
+        </View>
+      )}
+
+      {/* Défi décliné */}
+      {match.status === 'DECLINED' && (
+        <View style={styles.declinedBox}>
+          <Text style={styles.declinedText}>Défi refusé</Text>
+        </View>
+      )}
+
+      {/* Actions de validation du score */}
       {needsValidationFromUser && (
         <View style={styles.actionsContainer}>
           <Text style={styles.actionPrompt}>Confirmer ce résultat ?</Text>
@@ -210,14 +284,14 @@ export const MatchCard: React.FC<Props> = ({
         </View>
       )}
 
-      {/* Action de saisie de score si le match a eu lieu */}
+      {/* Action de saisie de score une fois le défi accepté */}
       {canSubmitScore && (
         <TouchableOpacity
           style={styles.submitScoreButton}
           onPress={() => onSubmitScores && onSubmitScores(match)}
           activeOpacity={0.7}
         >
-          <Text style={styles.submitScoreText}>Saisir le score</Text>
+          <Text style={styles.submitScoreText}>📝 Déclarer le score du match</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -391,6 +465,87 @@ const styles = StyleSheet.create({
     color: '#FF3B30',
     fontWeight: '600',
     fontSize: 13,
+  },
+  handicapBox: {
+    backgroundColor: '#F2F2F7',
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  handicapTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#000000',
+    textAlign: 'center',
+  },
+  firstServerText: {
+    fontSize: 11,
+    color: '#007AFF',
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  challengeBox: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(0, 0, 0, 0.08)',
+  },
+  challengeNotice: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#007AFF',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  acceptButton: {
+    flex: 1,
+    backgroundColor: '#34C759',
+    paddingVertical: 10,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  acceptButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  declineButton: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#FF3B30',
+    paddingVertical: 9,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  declineButtonText: {
+    color: '#FF3B30',
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  sentChallengeBox: {
+    marginTop: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#F2F2F7',
+    alignItems: 'center',
+  },
+  sentChallengeText: {
+    fontSize: 12,
+    color: '#8E8E93',
+    fontWeight: '500',
+  },
+  declinedBox: {
+    marginTop: 10,
+    alignItems: 'center',
+  },
+  declinedText: {
+    fontSize: 12,
+    color: '#FF3B30',
+    fontStyle: 'italic',
   },
   submitScoreButton: {
     backgroundColor: '#007AFF',
