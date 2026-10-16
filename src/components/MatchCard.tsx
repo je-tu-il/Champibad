@@ -38,27 +38,47 @@ export const MatchCard: React.FC<Props> = ({
     (match.status === 'ACCEPTED' || match.status === 'PROPOSED') &&
     isParticipant;
 
+  const isP1Winner = match.winnerId === match.player1Id;
+  const isP2Winner = match.winnerId === match.player2Id;
+
   // Statut dot & label
   let statusText = 'Proposé';
-  let statusDotColor = '#64748B';
+  let statusDotColor = '#8E8E93';
 
   if (match.status === 'VALIDATED') {
     statusText = 'Validé';
-    statusDotColor = '#16A34A';
+    statusDotColor = '#34C759';
   } else if (match.status === 'PENDING_VALIDATION') {
     statusText = 'En attente';
-    statusDotColor = '#EA580C';
+    statusDotColor = '#FF9500';
   } else if (match.status === 'CONTESTED') {
     statusText = 'Contesté';
-    statusDotColor = '#DC2626';
+    statusDotColor = '#FF3B30';
+  } else if (match.status === 'ACCEPTED') {
+    statusText = 'Accepté';
+    statusDotColor = '#007AFF';
   }
 
-  const slotDay = match.scheduledDate || match.scheduledTime;
+  const getFormattedDate = (): string => {
+    if (match.scheduledDate && match.scheduledTime) {
+      return `${match.scheduledDate} à ${match.scheduledTime}`;
+    }
+    if (match.scheduledDate) return match.scheduledDate;
+    if (match.scheduledTime) return `Séance à ${match.scheduledTime}`;
+    if (match.createdAt) {
+      const d = new Date(match.createdAt);
+      return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+    }
+    return '';
+  };
+
+  const formattedDate = getFormattedDate();
 
   return (
     <View style={styles.card}>
-      {/* Top Header : Statut */}
+      {/* Top Header : Date et Statut */}
       <View style={styles.topRow}>
+        <Text style={styles.dateLabel}>{formattedDate}</Text>
         <View style={styles.statusBadge}>
           <View style={[styles.statusDot, { backgroundColor: statusDotColor }]} />
           <Text style={styles.statusText}>{statusText}</Text>
@@ -68,19 +88,33 @@ export const MatchCard: React.FC<Props> = ({
       {/* Joueurs & Scores */}
       <View style={styles.playersRow}>
         {/* Joueur 1 */}
-        <View style={[styles.playerCol, match.winnerId === match.player1Id && styles.winnerCol]}>
-          <Text style={styles.playerName} numberOfLines={1}>
-            {p1Name}
-          </Text>
-          {match.eloDeltaPlayer1 !== undefined && (
+        <View style={styles.playerCol}>
+          <View style={styles.nameContainer}>
             <Text
+              style={[styles.playerName, isP1Winner && styles.winnerName]}
+              numberOfLines={1}
+            >
+              {p1Name}
+            </Text>
+            {isP1Winner && <Text style={styles.winnerCheck}>✓</Text>}
+          </View>
+          {match.eloDeltaPlayer1 !== undefined && (
+            <View
               style={[
-                styles.eloDelta,
-                { color: match.eloDeltaPlayer1 >= 0 ? '#16A34A' : '#DC2626' },
+                styles.eloPill,
+                {
+                  backgroundColor:
+                    match.eloDeltaPlayer1 >= 0 ? '#34C759' : '#FF3B30',
+                },
               ]}
             >
-              {match.eloDeltaPlayer1 >= 0 ? `+${match.eloDeltaPlayer1}` : match.eloDeltaPlayer1} Elo
-            </Text>
+              <Text style={styles.eloPillText}>
+                {match.eloDeltaPlayer1 >= 0
+                  ? `+${match.eloDeltaPlayer1}`
+                  : match.eloDeltaPlayer1}{' '}
+                Elo
+              </Text>
+            </View>
           )}
         </View>
 
@@ -88,17 +122,31 @@ export const MatchCard: React.FC<Props> = ({
         <View style={styles.scoreCol}>
           {match.sets && match.sets.length > 0 ? (
             <View style={styles.setsList}>
-              {match.sets.map((s, idx) => (
-                <View key={idx} style={styles.setRow}>
-                  <Text style={[styles.setText, s.player1Score > s.player2Score && styles.boldScore]}>
-                    {s.player1Score}
-                  </Text>
-                  <Text style={styles.setDivider}>-</Text>
-                  <Text style={[styles.setText, s.player2Score > s.player1Score && styles.boldScore]}>
-                    {s.player2Score}
-                  </Text>
-                </View>
-              ))}
+              {match.sets.map((s, idx) => {
+                const isP1Leading = s.player1Score > s.player2Score;
+                const isP2Leading = s.player2Score > s.player1Score;
+                return (
+                  <View key={idx} style={styles.setRow}>
+                    <Text
+                      style={[
+                        styles.setText,
+                        isP1Leading && styles.leadingScore,
+                      ]}
+                    >
+                      {s.player1Score}
+                    </Text>
+                    <Text style={styles.setDivider}>-</Text>
+                    <Text
+                      style={[
+                        styles.setText,
+                        isP2Leading && styles.leadingScore,
+                      ]}
+                    >
+                      {s.player2Score}
+                    </Text>
+                  </View>
+                );
+              })}
             </View>
           ) : (
             <Text style={styles.vsText}>VS</Text>
@@ -106,47 +154,57 @@ export const MatchCard: React.FC<Props> = ({
         </View>
 
         {/* Joueur 2 */}
-        <View style={[styles.playerCol, match.winnerId === match.player2Id && styles.winnerCol]}>
-          <Text style={styles.playerName} numberOfLines={1}>
-            {p2Name}
-          </Text>
-          {match.eloDeltaPlayer2 !== undefined && (
+        <View style={styles.playerCol}>
+          <View style={styles.nameContainer}>
             <Text
+              style={[styles.playerName, isP2Winner && styles.winnerName]}
+              numberOfLines={1}
+            >
+              {p2Name}
+            </Text>
+            {isP2Winner && <Text style={styles.winnerCheck}>✓</Text>}
+          </View>
+          {match.eloDeltaPlayer2 !== undefined && (
+            <View
               style={[
-                styles.eloDelta,
-                { color: match.eloDeltaPlayer2 >= 0 ? '#16A34A' : '#DC2626' },
+                styles.eloPill,
+                {
+                  backgroundColor:
+                    match.eloDeltaPlayer2 >= 0 ? '#34C759' : '#FF3B30',
+                },
               ]}
             >
-              {match.eloDeltaPlayer2 >= 0 ? `+${match.eloDeltaPlayer2}` : match.eloDeltaPlayer2} Elo
-            </Text>
+              <Text style={styles.eloPillText}>
+                {match.eloDeltaPlayer2 >= 0
+                  ? `+${match.eloDeltaPlayer2}`
+                  : match.eloDeltaPlayer2}{' '}
+                Elo
+              </Text>
+            </View>
           )}
         </View>
       </View>
 
-      {/* Créneau prévu */}
-      {slotDay ? (
-        <Text style={styles.slotInfo}>📅 {slotDay}</Text>
-      ) : null}
 
       {/* Actions de validation */}
       {needsValidationFromUser && (
         <View style={styles.actionsContainer}>
-          <Text style={styles.actionPrompt}>
-            Confirmer ce résultat ?
-          </Text>
+          <Text style={styles.actionPrompt}>Confirmer ce résultat ?</Text>
           <View style={styles.buttonsRow}>
             <TouchableOpacity
               style={styles.validateButton}
               onPress={() => onValidate && onValidate(match.id)}
+              activeOpacity={0.7}
             >
-              <Text style={styles.validateButtonText}>✓ Confirmer</Text>
+              <Text style={styles.validateButtonText}>Confirmer</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.contestButton}
               onPress={() => onContest && onContest(match.id)}
+              activeOpacity={0.7}
             >
-              <Text style={styles.contestButtonText}>✕ Contester</Text>
+              <Text style={styles.contestButtonText}>Contester</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -157,8 +215,9 @@ export const MatchCard: React.FC<Props> = ({
         <TouchableOpacity
           style={styles.submitScoreButton}
           onPress={() => onSubmitScores && onSubmitScores(match)}
+          activeOpacity={0.7}
         >
-          <Text style={styles.submitScoreText}>📝 Score</Text>
+          <Text style={styles.submitScoreText}>Saisir le score</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -168,27 +227,30 @@ export const MatchCard: React.FC<Props> = ({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 10,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
     elevation: 2,
   },
   topRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 12,
+  },
+  dateLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#8E8E93',
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 6,
   },
   statusDot: {
     width: 6,
@@ -196,9 +258,9 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   statusText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#64748B',
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#8E8E93',
   },
   playersRow: {
     flexDirection: 'row',
@@ -208,116 +270,139 @@ const styles = StyleSheet.create({
   playerCol: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 4,
+    paddingVertical: 2,
     paddingHorizontal: 4,
-    borderRadius: 6,
   },
-  winnerCol: {
-    backgroundColor: '#F0FDF4',
+  nameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
   },
   playerName: {
-    fontWeight: '700',
-    fontSize: 13,
-    color: '#0F172A',
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#000000',
     textAlign: 'center',
   },
-  eloDelta: {
-    fontSize: 11,
-    fontWeight: '700',
-    marginTop: 2,
+  winnerName: {
+    fontWeight: '600',
+  },
+  winnerCheck: {
+    color: '#34C759',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  eloPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginTop: 4,
+    alignSelf: 'center',
+  },
+  eloPillText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '600',
   },
   scoreCol: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   vsText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#94A3B8',
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#C7C7CC',
+    letterSpacing: 0.5,
   },
   setsList: {
-    gap: 3,
+    gap: 4,
     alignItems: 'center',
   },
   setRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    gap: 3,
+    backgroundColor: '#F2F2F7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
   setText: {
-    color: '#F8FAFC',
-    fontSize: 11,
+    color: '#8E8E93',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  leadingScore: {
+    color: '#000000',
     fontWeight: '600',
   },
-  boldScore: {
-    color: '#38BDF8',
-    fontWeight: '800',
-  },
   setDivider: {
-    color: '#64748B',
-    fontSize: 9,
+    color: '#C7C7CC',
+    fontSize: 10,
+    marginHorizontal: 4,
   },
   slotInfo: {
-    fontSize: 11,
-    color: '#64748B',
-    marginTop: 6,
+    fontSize: 12,
+    color: '#8E8E93',
+    marginTop: 10,
     textAlign: 'center',
   },
   actionsContainer: {
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(0, 0, 0, 0.08)',
   },
   actionPrompt: {
-    fontSize: 11,
-    color: '#334155',
-    fontWeight: '600',
+    fontSize: 13,
+    color: '#8E8E93',
     textAlign: 'center',
-    marginBottom: 6,
+    marginBottom: 10,
   },
   buttonsRow: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 10,
   },
   validateButton: {
-    flex: 2,
-    backgroundColor: '#16A34A',
-    paddingVertical: 7,
-    borderRadius: 6,
+    flex: 1,
+    backgroundColor: '#34C759',
+    paddingVertical: 10,
+    borderRadius: 20,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   validateButtonText: {
     color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 12,
+    fontWeight: '600',
+    fontSize: 13,
   },
   contestButton: {
     flex: 1,
-    backgroundColor: '#FEE2E2',
-    paddingVertical: 7,
-    borderRadius: 6,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#FF3B30',
+    paddingVertical: 9,
+    borderRadius: 20,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   contestButtonText: {
-    color: '#DC2626',
-    fontWeight: '700',
-    fontSize: 12,
+    color: '#FF3B30',
+    fontWeight: '600',
+    fontSize: 13,
   },
   submitScoreButton: {
-    backgroundColor: '#0284C7',
-    paddingVertical: 7,
-    borderRadius: 6,
+    backgroundColor: '#007AFF',
+    paddingVertical: 10,
+    borderRadius: 20,
     alignItems: 'center',
-    marginTop: 8,
+    justifyContent: 'center',
+    marginTop: 12,
   },
   submitScoreText: {
     color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 12,
+    fontWeight: '600',
+    fontSize: 13,
   },
 });

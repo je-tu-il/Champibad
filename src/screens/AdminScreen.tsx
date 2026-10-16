@@ -170,20 +170,20 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
   if (!settings) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0284C7" />
+        <ActivityIndicator size="large" color="#007AFF" />
       </View>
     );
   }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.headerBox}>
-        <Text style={styles.headerTitle}>🛡️ Admin</Text>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Administration</Text>
       </View>
 
       {/* 1. Formulaire d'ajout rapide d'un joueur */}
       <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>➕ Ajouter un joueur</Text>
+        <Text style={styles.sectionTitle}>Ajouter un joueur</Text>
 
         <View style={styles.formRow}>
           <View style={styles.inputCol}>
@@ -191,7 +191,7 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
             <TextInput
               style={styles.input}
               placeholder="ex: Lucas"
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor="#8E8E93"
               value={newFirstName}
               onChangeText={setNewFirstName}
             />
@@ -201,7 +201,7 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
             <TextInput
               style={styles.input}
               placeholder="ex: Martin"
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor="#8E8E93"
               value={newLastName}
               onChangeText={setNewLastName}
             />
@@ -214,7 +214,7 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
             <TextInput
               style={styles.input}
               placeholder="ex: 07891234"
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor="#8E8E93"
               value={newLicense}
               onChangeText={setNewLicense}
               keyboardType="numeric"
@@ -225,7 +225,7 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
             <TextInput
               style={styles.input}
               placeholder="1200"
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor="#8E8E93"
               value={newElo}
               onChangeText={setNewElo}
               keyboardType="numeric"
@@ -234,28 +234,32 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
         </View>
 
         <TouchableOpacity style={styles.addPlayerBtn} onPress={handleAddPlayer}>
-          <Text style={styles.addPlayerText}>+ Ajouter</Text>
+          <Text style={styles.addPlayerText}>Ajouter</Text>
         </TouchableOpacity>
       </View>
 
       {/* 2. Liste des Joueurs existants */}
       <View style={styles.sectionCard}>
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>👥 Joueurs inscrits</Text>
+          <Text style={styles.sectionTitle}>Joueurs inscrits</Text>
           <View style={styles.countBadge}>
             <Text style={styles.countText}>{players.length}</Text>
           </View>
         </View>
 
-        {players.map((p) => (
-          <View key={p.id} style={styles.playerRow}>
+        {players.map((p, index) => (
+          <View
+            key={p.id}
+            style={[
+              styles.playerRow,
+              index === players.length - 1 && styles.playerRowLast,
+            ]}
+          >
             <View style={styles.playerInfo}>
-              <Text style={styles.playerText} numberOfLines={1}>
-                <Text style={styles.playerRowName}>
-                  {p.firstName} {p.lastName}
-                </Text>
-                <Text style={styles.playerLicense}> • Licence : {p.licenseNumber}</Text>
+              <Text style={styles.playerRowName}>
+                {p.firstName} {p.lastName}
               </Text>
+              <Text style={styles.playerLicense}>Licence : {p.licenseNumber}</Text>
             </View>
 
             {p.id !== currentUser.id && (
@@ -272,13 +276,14 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
 
       {/* 3. Règles d'Écart de Niveau & Handicaps */}
       <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>⚖️ Handicap</Text>
+        <Text style={styles.sectionTitle}>Handicap</Text>
 
         <View style={styles.switchRow}>
           <Text style={styles.switchLabel}>Mode Handicap activé</Text>
           <Switch
             value={settings.handicapModeEnabled}
             onValueChange={(val) => setSettings({ ...settings, handicapModeEnabled: val })}
+            trackColor={{ false: '#E5E5EA', true: '#34C759' }}
           />
         </View>
 
@@ -290,6 +295,7 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
           onChangeText={(v) =>
             setSettings({ ...settings, maxEloGapForDirectMatch: parseInt(v, 10) || 0 })
           }
+          placeholderTextColor="#8E8E93"
         />
 
         <Text style={[styles.inputLabel, styles.inputLabelSpacing]}>Points de pénalité de départ (-X pts)</Text>
@@ -300,12 +306,13 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
           onChangeText={(v) =>
             setSettings({ ...settings, handicapPointsDelta: parseInt(v, 10) || 0 })
           }
+          placeholderTextColor="#8E8E93"
         />
       </View>
 
       {/* 4. Synchronisation API des licenciés */}
       <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>🔄 Synchronisation API</Text>
+        <Text style={styles.sectionTitle}>Synchronisation API</Text>
 
         <Text style={styles.inputLabel}>URL de l'API / Webhook du club</Text>
         <TextInput
@@ -314,7 +321,7 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
           onChangeText={(v) => setSettings({ ...settings, licenseApiUrl: v })}
           autoCapitalize="none"
           placeholder="https://..."
-          placeholderTextColor="#94A3B8"
+          placeholderTextColor="#8E8E93"
         />
 
         <TouchableOpacity
@@ -325,14 +332,14 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
           {syncingApi ? (
             <ActivityIndicator color="#FFFFFF" size="small" />
           ) : (
-            <Text style={styles.syncBtnText}>🔄 Synchroniser</Text>
+            <Text style={styles.syncBtnText}>Synchroniser</Text>
           )}
         </TouchableOpacity>
       </View>
 
       {/* 5. Clôture de saison */}
       <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>🏆 Clôture de saison</Text>
+        <Text style={styles.sectionTitle}>Clôture de saison</Text>
 
         <TouchableOpacity style={styles.archiveBtn} onPress={handleArchiveSeason}>
           <Text style={styles.archiveBtnText}>Clôturer la saison en cours</Text>
@@ -345,7 +352,7 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
         disabled={saving}
         onPress={handleSaveSettings}
       >
-        <Text style={styles.saveAllText}>💾 Enregistrer les paramètres</Text>
+        <Text style={styles.saveAllText}>Enregistrer</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -354,185 +361,187 @@ export const AdminScreen: React.FC<Props> = ({ currentUser }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F2F2F7',
   },
   content: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     paddingBottom: 40,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#F2F2F7',
   },
-  headerBox: {
-    backgroundColor: '#0F172A',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#334155',
+  header: {
+    paddingBottom: 16,
   },
   headerTitle: {
-    color: '#38BDF8',
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 28,
+    fontWeight: '600',
+    color: '#000000',
+    letterSpacing: 0.35,
   },
   sectionCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 12,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#8E8E93',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 10,
   },
   countBadge: {
-    backgroundColor: '#E0F2FE',
+    backgroundColor: '#F2F2F7',
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
   },
   countText: {
-    color: '#0369A1',
-    fontWeight: '800',
-    fontSize: 11,
+    color: '#8E8E93',
+    fontWeight: '600',
+    fontSize: 12,
   },
   formRow: {
     flexDirection: 'row',
-    gap: 10,
-    marginBottom: 10,
+    gap: 12,
+    marginBottom: 12,
   },
   inputCol: {
     flex: 1,
   },
   inputLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#475569',
-    marginBottom: 5,
+    fontSize: 13,
+    color: '#8E8E93',
+    marginBottom: 4,
   },
   inputLabelSpacing: {
-    marginTop: 10,
+    marginTop: 12,
   },
   input: {
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    borderRadius: 8,
+    backgroundColor: '#F2F2F7',
+    borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 9,
-    fontSize: 13,
-    color: '#0F172A',
+    paddingVertical: 12,
+    fontSize: 15,
+    color: '#000000',
   },
   addPlayerBtn: {
-    backgroundColor: '#0284C7',
-    paddingVertical: 11,
-    borderRadius: 8,
+    backgroundColor: '#007AFF',
+    paddingVertical: 14,
+    borderRadius: 10,
     alignItems: 'center',
     marginTop: 6,
   },
   addPlayerText: {
     color: '#FFFFFF',
-    fontWeight: '800',
-    fontSize: 13,
+    fontWeight: '600',
+    fontSize: 15,
   },
   playerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    paddingVertical: 12,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
+  },
+  playerRowLast: {
+    borderBottomWidth: 0,
+    paddingBottom: 4,
   },
   playerInfo: {
     flex: 1,
     marginRight: 10,
   },
-  playerText: {
-    fontSize: 13,
-  },
   playerRowName: {
-    fontWeight: '700',
-    color: '#0F172A',
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#000000',
+    marginBottom: 2,
   },
   playerLicense: {
-    color: '#64748B',
+    fontSize: 13,
+    color: '#8E8E93',
   },
   deleteBtn: {
-    backgroundColor: '#FEE2E2',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
   },
   deleteBtnText: {
-    color: '#DC2626',
-    fontSize: 11,
-    fontWeight: '700',
+    color: '#FF3B30',
+    fontSize: 14,
+    fontWeight: '500',
   },
   switchRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-    marginBottom: 12,
+    paddingVertical: 8,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
+    marginBottom: 14,
   },
   switchLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#334155',
+    fontSize: 15,
+    color: '#000000',
   },
   syncBtn: {
-    backgroundColor: '#0F172A',
-    paddingVertical: 11,
-    borderRadius: 8,
+    backgroundColor: '#007AFF',
+    paddingVertical: 14,
+    borderRadius: 10,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 14,
   },
   syncBtnText: {
     color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 12,
+    fontWeight: '600',
+    fontSize: 15,
   },
   archiveBtn: {
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FECACA',
-    paddingVertical: 11,
-    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 0.5,
+    borderColor: '#FF3B30',
+    paddingVertical: 14,
+    borderRadius: 10,
     alignItems: 'center',
   },
   archiveBtnText: {
-    color: '#DC2626',
-    fontWeight: '700',
-    fontSize: 12,
+    color: '#FF3B30',
+    fontWeight: '600',
+    fontSize: 15,
   },
   saveAllBtn: {
-    backgroundColor: '#16A34A',
-    paddingVertical: 13,
-    borderRadius: 10,
+    backgroundColor: '#34C759',
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: 'center',
-    marginTop: 6,
+    marginTop: 4,
+    marginBottom: 20,
   },
   saveAllText: {
     color: '#FFFFFF',
-    fontWeight: '800',
-    fontSize: 14,
+    fontWeight: '600',
+    fontSize: 16,
   },
   btnDisabled: {
-    opacity: 0.6,
+    opacity: 0.5,
   },
 });

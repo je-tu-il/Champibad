@@ -16,11 +16,11 @@ interface Props {
 }
 
 const getEloColor = (elo: number): string => {
-  if (elo >= 1500) return '#DC2626';
-  if (elo >= 1400) return '#EA580C';
-  if (elo >= 1300) return '#2563EB';
-  if (elo >= 1200) return '#16A34A';
-  return '#64748B';
+  if (elo >= 1500) return '#FF3B30';
+  if (elo >= 1400) return '#FF9500';
+  if (elo >= 1300) return '#007AFF';
+  if (elo >= 1200) return '#34C759';
+  return '#8E8E93';
 };
 
 export const LeaderboardScreen: React.FC<Props> = ({ currentUser, onChallengePlayer }) => {
@@ -45,34 +45,53 @@ export const LeaderboardScreen: React.FC<Props> = ({ currentUser, onChallengePla
 
   return (
     <View style={styles.container}>
-      {/* Sélecteur de mode 1v1 / 2v2 */}
-      <View style={styles.modeTabs}>
-        <TouchableOpacity
-          style={[styles.tab, mode === 'SOLO' && styles.activeTab]}
-          onPress={() => setMode('SOLO')}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.tabText, mode === 'SOLO' && styles.activeTabText]}>
-            1v1
-          </Text>
-        </TouchableOpacity>
+      {/* Sélecteur de mode 1v1 / 2v2 (Segmented Control style iOS) */}
+      <View style={styles.header}>
+        <View style={styles.segmentedControl}>
+          <TouchableOpacity
+            style={[styles.segment, mode === 'SOLO' && styles.segmentActive]}
+            onPress={() => setMode('SOLO')}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[
+                styles.segmentText,
+                mode === 'SOLO' && styles.segmentTextActive,
+              ]}
+            >
+              1v1
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.tab, mode === 'DOUBLE' && styles.activeTab]}
-          onPress={() => setMode('DOUBLE')}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.tabText, mode === 'DOUBLE' && styles.activeTabText]}>
-            2v2
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.segment, mode === 'DOUBLE' && styles.segmentActive]}
+            onPress={() => setMode('DOUBLE')}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[
+                styles.segmentText,
+                mode === 'DOUBLE' && styles.segmentTextActive,
+              ]}
+            >
+              2v2
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Liste des joueurs */}
       <FlatList
         data={sortedPlayers}
         keyExtractor={(item) => item.id}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={loadData} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={loadData}
+            tintColor="#007AFF"
+            colors={['#007AFF']}
+          />
+        }
         contentContainerStyle={styles.listContent}
         renderItem={({ item, index }) => {
           const rank = index + 1;
@@ -86,20 +105,20 @@ export const LeaderboardScreen: React.FC<Props> = ({ currentUser, onChallengePla
             <View
               style={[
                 styles.playerCard,
-                isCurrentUser && styles.currentUserCard,
                 rank === 1 && styles.firstRankCard,
+                isCurrentUser && styles.currentUserCard,
               ]}
             >
               {/* Rang & Delta */}
               <View style={styles.rankBox}>
                 <Text style={[styles.rankNumber, rank <= 3 && styles.topRankNumber]}>
-                  {rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`}
+                  {rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank}
                 </Text>
                 {eloDelta !== 0 && (
                   <Text
                     style={[
                       styles.rankDelta,
-                      { color: eloDelta > 0 ? '#16A34A' : '#DC2626' },
+                      { color: eloDelta > 0 ? '#34C759' : '#FF3B30' },
                     ]}
                   >
                     {eloDelta > 0 ? `+${eloDelta}` : `${eloDelta}`}
@@ -145,78 +164,89 @@ export const LeaderboardScreen: React.FC<Props> = ({ currentUser, onChallengePla
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F2F2F7',
   },
-  modeTabs: {
-    flexDirection: 'row',
-    backgroundColor: '#0F172A',
+  header: {
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 8,
+    paddingVertical: 10,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
   },
-  tab: {
-    flex: 1,
-    paddingVertical: 8,
+  segmentedControl: {
+    flexDirection: 'row',
+    backgroundColor: '#F2F2F7',
     borderRadius: 8,
+    padding: 2,
+  },
+  segment: {
+    flex: 1,
+    paddingVertical: 6,
+    borderRadius: 6,
     alignItems: 'center',
-    backgroundColor: '#1E293B',
+    justifyContent: 'center',
   },
-  activeTab: {
-    backgroundColor: '#0284C7',
+  segmentActive: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  tabText: {
-    color: '#94A3B8',
+  segmentText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '500',
+    color: '#8E8E93',
   },
-  activeTabText: {
-    color: '#FFFFFF',
+  segmentTextActive: {
+    color: '#000000',
+    fontWeight: '600',
   },
   listContent: {
-    padding: 12,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 24,
   },
   playerCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 6,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   currentUserCard: {
-    borderColor: '#38BDF8',
-    backgroundColor: '#F0F9FF',
-    borderWidth: 1.5,
+    backgroundColor: '#F0F4FF',
   },
   firstRankCard: {
-    borderColor: '#F59E0B',
-    borderWidth: 1.5,
+    backgroundColor: '#FFFBEB',
   },
   rankBox: {
-    width: 36,
+    width: 32,
+    minHeight: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
   rankNumber: {
     fontSize: 14,
-    fontWeight: '800',
-    color: '#64748B',
+    fontWeight: '600',
+    color: '#8E8E93',
+    textAlign: 'center',
   },
   topRankNumber: {
-    fontSize: 18,
+    fontSize: 16,
   },
   rankDelta: {
     fontSize: 10,
-    fontWeight: '700',
-    marginTop: 1,
+    fontWeight: '500',
+    marginTop: 2,
   },
   playerInfo: {
     flex: 1,
@@ -228,37 +258,39 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   playerName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#000000',
     flexShrink: 1,
   },
   youBadge: {
     fontSize: 11,
-    fontWeight: '700',
-    color: '#0284C7',
+    fontWeight: '500',
+    color: '#007AFF',
   },
   eloText: {
     fontSize: 15,
-    fontWeight: '800',
+    fontWeight: '600',
     textAlign: 'right',
     minWidth: 42,
-    marginRight: 8,
   },
   actionBox: {
-    width: 54,
+    width: 60,
     alignItems: 'flex-end',
     justifyContent: 'center',
+    marginLeft: 8,
   },
   challengeBtn: {
-    backgroundColor: '#0284C7',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   challengeBtnText: {
     color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 10,
+    fontWeight: '600',
+    fontSize: 12,
   },
 });

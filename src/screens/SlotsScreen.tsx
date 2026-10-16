@@ -59,7 +59,7 @@ export const SlotsScreen: React.FC<Props> = ({ currentUser }) => {
 
     const dateVal = newExceptionDate.trim();
     if (availability.exceptionsUnavailable.includes(dateVal)) {
-      Alert.alert('Info', 'Cette date d\'absence est déjà enregistrée.');
+      Alert.alert('Info', "Cette date d'absence est déjà enregistrée.");
       return;
     }
 
@@ -91,10 +91,51 @@ export const SlotsScreen: React.FC<Props> = ({ currentUser }) => {
     return time.replace(':00', 'h').replace(':', 'h');
   };
 
+  const getUpcomingSlotDates = (): string[] => {
+    const activeDays = clubSlots.filter((s) => s.isActive).map((s) => s.dayOfWeek);
+    if (activeDays.length === 0) return [];
+
+    const dates: string[] = [];
+    const now = new Date();
+
+    for (let i = 0; i <= 21; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+      if (activeDays.includes(d.getDay())) {
+        const dayStr = d.toLocaleDateString('fr-FR', { weekday: 'short' });
+        const dayCapitalized = dayStr.charAt(0).toUpperCase() + dayStr.slice(1);
+        const dayNum = d.getDate();
+        const monthStr = d.toLocaleDateString('fr-FR', { month: 'short' });
+        const label = `${dayCapitalized} ${dayNum} ${monthStr}`;
+        dates.push(label);
+        if (dates.length >= 6) break;
+      }
+    }
+    return dates;
+  };
+
+  const handleToggleUpcomingDate = async (dateLabel: string) => {
+    if (!availability) return;
+    const isAlreadyAbsent = availability.exceptionsUnavailable.includes(dateLabel);
+    const updated = isAlreadyAbsent
+      ? availability.exceptionsUnavailable.filter((d) => d !== dateLabel)
+      : [...availability.exceptionsUnavailable, dateLabel];
+
+    const newAvail: PlayerAvailability = {
+      ...availability,
+      exceptionsUnavailable: updated,
+    };
+    setAvailability(newAvail);
+    await SlotService.savePlayerAvailability(newAvail);
+  };
+
+  const upcomingDates = getUpcomingSlotDates();
+
   return (
     <ScrollView
       style={styles.container}
-      refreshControl={<RefreshControl refreshing={loading} onRefresh={loadData} />}
+      contentContainerStyle={styles.contentContainer}
+      refreshControl={<RefreshControl refreshing={loading} onRefresh={loadData} tintColor="#007AFF" />}
+      showsVerticalScrollIndicator={false}
     >
       {clubSlots.map((slot) => {
         const isRecurringChecked = availability?.recurringDays.includes(slot.dayOfWeek);
@@ -112,17 +153,18 @@ export const SlotsScreen: React.FC<Props> = ({ currentUser }) => {
               <TouchableOpacity
                 style={[
                   styles.toggleBtn,
-                  isRecurringChecked && styles.toggleBtnActive,
+                  isRecurringChecked ? styles.toggleBtnActive : styles.toggleBtnInactive,
                 ]}
                 onPress={() => handleToggleRecurringDay(slot.dayOfWeek)}
+                activeOpacity={0.7}
               >
                 <Text
                   style={[
                     styles.toggleText,
-                    isRecurringChecked && styles.toggleTextActive,
+                    isRecurringChecked ? styles.toggleTextActive : styles.toggleTextInactive,
                   ]}
                 >
-                  {isRecurringChecked ? '✓ Dispo' : '+ Dispo'}
+                  Dispo
                 </Text>
               </TouchableOpacity>
             </View>
@@ -130,7 +172,7 @@ export const SlotsScreen: React.FC<Props> = ({ currentUser }) => {
             {slot.hasPeakHours && (
               <View style={styles.peakRow}>
                 <Text style={styles.peakText}>
-                  ⚠️ Matchs après {slot.allowedMatchStartTime ? formatTime(slot.allowedMatchStartTime) : '21h'}
+                  Matchs après {slot.allowedMatchStartTime ? formatTime(slot.allowedMatchStartTime) : '21h'}
                 </Text>
               </View>
             )}
@@ -140,34 +182,77 @@ export const SlotsScreen: React.FC<Props> = ({ currentUser }) => {
 
       {/* Mes Exceptions d'indisponibilité */}
       <View style={styles.exceptionCard}>
-        <Text style={styles.cardTitle}>📅 Absences</Text>
+        <Text style={styles.sectionTitle}>Absences</Text>
+        <Text style={styles.sectionSubtitle}>Séances à venir (sélection directe)</Text>
 
+        <View style={styles.upcomingGrid}>
+          {upcomingDates.map((dateStr, idx) => {
+            const isAbsent = availability?.exceptionsUnavailable.includes(dateStr);
+            return (
+              <TouchableOpacity
+                key={idx}
+                style={[
+                  styles.upcomingChip,
+                  isAbsent && styles.upcomingChipAbsent,
+                ]}
+                onPress={() => handleToggleUpcomingDate(dateStr)}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.upcomingChipText,
+                    isAbsent && styles.upcomingChipTextAbsent,
+                  ]}
+                >
+                  {isAbsent ? '✕ ' : ''}{dateStr}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        <Text style={[styles.sectionSubtitle, { marginTop: 14 }]}>Autre date</Text>
         <View style={styles.inputRow}>
           <TextInput
             style={styles.dateInput}
-            placeholder="ex: Jeudi 24 Octobre"
-            placeholderTextColor="#94A3B8"
+            placeholder="ex: 28 Octobre"
+            placeholderTextColor="#8E8E93"
             value={newExceptionDate}
             onChangeText={setNewExceptionDate}
+            returnKeyType="done"
+            onSubmitEditing={handleAddException}
           />
-          <TouchableOpacity style={styles.addExceptionBtn} onPress={handleAddException}>
-            <Text style={styles.addExceptionText}>+ Noter absent</Text>
+          <TouchableOpacity
+            style={styles.addExceptionBtn}
+            onPress={handleAddException}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Ajouter une date d'absence"
+          >
+            <Text style={styles.addExceptionText}>+</Text>
           </TouchableOpacity>
         </View>
 
         {availability && availability.exceptionsUnavailable.length > 0 ? (
-          <View style={styles.chipsContainer}>
-            {availability.exceptionsUnavailable.map((dateStr, idx) => (
-              <View key={idx} style={styles.dateChip}>
-                <Text style={styles.dateChipText}>{dateStr}</Text>
-                <TouchableOpacity
-                  onPress={() => handleRemoveException(dateStr)}
-                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                >
-                  <Text style={styles.chipClose}>✕</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
+          <View style={styles.recordedSection}>
+            <Text style={styles.sectionSubtitle}>Absences enregistrées</Text>
+            <View style={styles.chipsContainer}>
+              {availability.exceptionsUnavailable.map((dateStr, idx) => (
+                <View key={idx} style={styles.dateChip}>
+                  <Text style={styles.dateChipText}>{dateStr}</Text>
+                  <TouchableOpacity
+                    onPress={() => handleRemoveException(dateStr)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    activeOpacity={0.6}
+                    style={styles.chipCloseBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Supprimer absence du ${dateStr}`}
+                  >
+                    <Text style={styles.chipClose}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
           </View>
         ) : (
           <Text style={styles.noExceptions}>Aucune absence enregistrée.</Text>
@@ -180,16 +265,22 @@ export const SlotsScreen: React.FC<Props> = ({ currentUser }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F2F2F7',
+  },
+  contentContainer: {
     padding: 16,
+    paddingBottom: 32,
   },
   slotCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   slotRow: {
     flexDirection: 'row',
@@ -198,120 +289,164 @@ const styles = StyleSheet.create({
   },
   slotInfo: {
     flex: 1,
-    marginRight: 10,
+    marginRight: 12,
   },
   slotTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#000000',
   },
   slotGym: {
-    fontSize: 11,
-    color: '#64748B',
-    marginTop: 2,
+    fontSize: 13,
+    color: '#8E8E93',
+    marginTop: 4,
   },
   toggleBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: '#F1F5F9',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   toggleBtnActive: {
-    backgroundColor: '#DCFCE7',
-    borderColor: '#86EFAC',
+    backgroundColor: '#34C759',
+  },
+  toggleBtnInactive: {
+    backgroundColor: '#F2F2F7',
   },
   toggleText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#64748B',
+    fontSize: 13,
+    fontWeight: '600',
   },
   toggleTextActive: {
-    color: '#15803D',
+    color: '#FFFFFF',
+  },
+  toggleTextInactive: {
+    color: '#8E8E93',
   },
   peakRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 0.5,
+    borderTopColor: 'rgba(0, 0, 0, 0.05)',
   },
   peakText: {
-    fontSize: 11,
-    color: '#D97706',
+    fontSize: 12,
+    color: '#FF9500',
     fontWeight: '500',
   },
   exceptionCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 14,
-    marginTop: 6,
+    borderRadius: 14,
+    padding: 16,
+    marginTop: 4,
     marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  cardTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#000000',
+    marginBottom: 6,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#8E8E93',
     marginBottom: 10,
+  },
+  upcomingGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
+  },
+  upcomingChip: {
+    backgroundColor: '#F2F2F7',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+  },
+  upcomingChipAbsent: {
+    backgroundColor: '#FFE5E5',
+  },
+  upcomingChipText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#000000',
+  },
+  upcomingChipTextAbsent: {
+    color: '#FF3B30',
+    fontWeight: '600',
+  },
+  recordedSection: {
+    marginTop: 12,
   },
   inputRow: {
     flexDirection: 'row',
-    gap: 8,
+    alignItems: 'center',
+    gap: 10,
     marginBottom: 10,
   },
   dateInput: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    fontSize: 12,
-    backgroundColor: '#F8FAFC',
-    color: '#0F172A',
+    height: 44,
+    backgroundColor: '#F2F2F7',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    fontSize: 15,
+    color: '#000000',
   },
   addExceptionBtn: {
-    backgroundColor: '#0284C7',
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#007AFF',
+    alignItems: 'center',
     justifyContent: 'center',
   },
   addExceptionText: {
     color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 11,
+    fontSize: 22,
+    fontWeight: '400',
+    lineHeight: 24,
+    textAlign: 'center',
   },
   chipsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 8,
   },
   dateChip: {
-    backgroundColor: '#FEE2E2',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 16,
+    backgroundColor: '#FFE5E5',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   dateChipText: {
-    color: '#991B1B',
-    fontSize: 11,
-    fontWeight: '600',
+    color: '#FF3B30',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  chipCloseBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   chipClose: {
-    color: '#DC2626',
-    fontWeight: '700',
-    fontSize: 11,
+    color: '#FF3B30',
+    fontSize: 12,
+    fontWeight: '600',
   },
   noExceptions: {
-    fontSize: 11,
-    color: '#94A3B8',
+    fontSize: 13,
+    color: '#8E8E93',
     fontStyle: 'italic',
   },
 });

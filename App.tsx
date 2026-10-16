@@ -68,7 +68,7 @@ export default function App() {
   if (!currentUser) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
         <AuthScreen onLoginSuccess={(player) => setCurrentUser(player)} />
       </SafeAreaView>
     );
@@ -76,9 +76,9 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* En-tête épuré */}
+      {/* En-tête Apple épuré */}
       <Header
         currentUser={currentUser}
         onLogout={handleLogout}
@@ -112,11 +112,12 @@ export default function App() {
         )}
       </View>
 
-      {/* Barre de navigation simplifiée (4 onglets clés + Admin si connecté) */}
+      {/* Barre d'onglets iOS native */}
       <View style={styles.bottomTabBar}>
         <TouchableOpacity
-          style={[styles.tabItem, currentTab === 'LEADERBOARD' && styles.activeTabItem]}
+          style={styles.tabItem}
           onPress={() => setCurrentTab('LEADERBOARD')}
+          activeOpacity={0.7}
         >
           <Text style={styles.tabIcon}>🏆</Text>
           <Text style={[styles.tabLabel, currentTab === 'LEADERBOARD' && styles.activeTabLabel]}>
@@ -125,28 +126,31 @@ export default function App() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.tabItem, currentTab === 'MATCHES' && styles.activeTabItem]}
+          style={styles.tabItem}
           onPress={() => setCurrentTab('MATCHES')}
+          activeOpacity={0.7}
         >
-          <Text style={styles.tabIcon}>🏸</Text>
+          <Text style={styles.tabIcon}>⚔</Text>
           <Text style={[styles.tabLabel, currentTab === 'MATCHES' && styles.activeTabLabel]}>
             Matchs
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.tabItem, currentTab === 'SLOTS' && styles.activeTabItem]}
+          style={styles.tabItem}
           onPress={() => setCurrentTab('SLOTS')}
+          activeOpacity={0.7}
         >
-          <Text style={styles.tabIcon}>🕒</Text>
+          <Text style={styles.tabIcon}>📅</Text>
           <Text style={[styles.tabLabel, currentTab === 'SLOTS' && styles.activeTabLabel]}>
             Créneaux
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.tabItem, currentTab === 'CHAT' && styles.activeTabItem]}
+          style={styles.tabItem}
           onPress={() => setCurrentTab('CHAT')}
+          activeOpacity={0.7}
         >
           <Text style={styles.tabIcon}>💬</Text>
           <Text style={[styles.tabLabel, currentTab === 'CHAT' && styles.activeTabLabel]}>
@@ -156,10 +160,11 @@ export default function App() {
 
         {isAdmin && (
           <TouchableOpacity
-            style={[styles.tabItem, currentTab === 'ADMIN' && styles.activeTabItem]}
+            style={styles.tabItem}
             onPress={() => setCurrentTab('ADMIN')}
+            activeOpacity={0.7}
           >
-            <Text style={styles.tabIcon}>🛡️</Text>
+            <Text style={styles.tabIcon}>⚙</Text>
             <Text style={[styles.tabLabel, currentTab === 'ADMIN' && styles.activeTabLabel]}>
               Admin
             </Text>
@@ -173,41 +178,37 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#FFFFFF',
   },
   screenContent: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F2F2F7',
   },
   bottomTabBar: {
     flexDirection: 'row',
-    backgroundColor: '#0F172A',
-    borderTopWidth: 1,
-    borderTopColor: '#1E293B',
-    paddingBottom: 6,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 0.5,
+    borderTopColor: 'rgba(0, 0, 0, 0.1)',
+    paddingBottom: 8,
     paddingTop: 6,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
-  },
-  activeTabItem: {
-    borderTopWidth: 2,
-    borderTopColor: '#38BDF8',
+    paddingVertical: 2,
   },
   tabIcon: {
-    fontSize: 20,
-    marginBottom: 2,
+    fontSize: 18,
+    marginBottom: 3,
   },
   tabLabel: {
     fontSize: 10,
-    fontWeight: '600',
-    color: '#94A3B8',
+    fontWeight: '500',
+    color: '#8E8E93',
   },
   activeTabLabel: {
-    color: '#38BDF8',
-    fontWeight: '800',
+    color: '#007AFF',
+    fontWeight: '600',
   },
 });

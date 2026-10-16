@@ -199,32 +199,35 @@ export const MatchesScreen: React.FC<Props> = ({
 
   return (
     <View style={styles.container}>
-      {/* Barre d'action & Filtres */}
+      {/* Barre d'action & Filtres style iOS Segmented Control */}
       <View style={styles.headerBar}>
-        <View style={styles.filtersRow}>
+        <View style={styles.segmentedControl}>
           <TouchableOpacity
-            style={[styles.filterBtn, filter === 'ALL' && styles.activeFilterBtn]}
+            style={[styles.segmentBtn, filter === 'ALL' && styles.activeSegmentBtn]}
             onPress={() => setFilter('ALL')}
+            activeOpacity={0.7}
           >
-            <Text style={[styles.filterText, filter === 'ALL' && styles.activeFilterText]}>
+            <Text style={[styles.segmentText, filter === 'ALL' && styles.activeSegmentText]}>
               Tous ({matches.length})
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.filterBtn, filter === 'PENDING' && styles.activeFilterBtn]}
+            style={[styles.segmentBtn, filter === 'PENDING' && styles.activeSegmentBtn]}
             onPress={() => setFilter('PENDING')}
+            activeOpacity={0.7}
           >
-            <Text style={[styles.filterText, filter === 'PENDING' && styles.activeFilterText]}>
+            <Text style={[styles.segmentText, filter === 'PENDING' && styles.activeSegmentText]}>
               À valider
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.filterBtn, filter === 'VALIDATED' && styles.activeFilterBtn]}
+            style={[styles.segmentBtn, filter === 'VALIDATED' && styles.activeSegmentBtn]}
             onPress={() => setFilter('VALIDATED')}
+            activeOpacity={0.7}
           >
-            <Text style={[styles.filterText, filter === 'VALIDATED' && styles.activeFilterText]}>
+            <Text style={[styles.segmentText, filter === 'VALIDATED' && styles.activeSegmentText]}>
               Validés
             </Text>
           </TouchableOpacity>
@@ -233,8 +236,9 @@ export const MatchesScreen: React.FC<Props> = ({
         <TouchableOpacity
           style={styles.newChallengeBtn}
           onPress={() => setShowChallengeModal(true)}
+          activeOpacity={0.7}
         >
-          <Text style={styles.newChallengeText}>+ Proposer un défi</Text>
+          <Text style={styles.newChallengeText}>+ Défi</Text>
         </TouchableOpacity>
       </View>
 
@@ -266,22 +270,23 @@ export const MatchesScreen: React.FC<Props> = ({
       />
 
       {/* Modal de déclaration des scores */}
-      <Modal visible={!!selectedMatchForScore} transparent animationType="slide">
+      <Modal visible={!!selectedMatchForScore} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.scoreModalCard}>
-            <Text style={styles.modalTitle}>Saisie du Score du Match</Text>
+            <Text style={styles.modalTitle}>Saisie du Score</Text>
             <Text style={styles.modalSubtitle}>
               Indiquez les scores des sets pour transmission à l'adversaire.
             </Text>
 
             {/* Set 1 */}
             <View style={styles.setRowInput}>
-              <Text style={styles.setLabel}>Set 1 :</Text>
+              <Text style={styles.setLabel}>Set 1</Text>
               <TextInput
                 style={styles.scoreInput}
                 value={s1P1}
                 onChangeText={setS1P1}
                 keyboardType="numeric"
+                selectTextOnFocus
               />
               <Text style={styles.setDash}>-</Text>
               <TextInput
@@ -289,17 +294,19 @@ export const MatchesScreen: React.FC<Props> = ({
                 value={s1P2}
                 onChangeText={setS1P2}
                 keyboardType="numeric"
+                selectTextOnFocus
               />
             </View>
 
             {/* Set 2 */}
             <View style={styles.setRowInput}>
-              <Text style={styles.setLabel}>Set 2 :</Text>
+              <Text style={styles.setLabel}>Set 2</Text>
               <TextInput
                 style={styles.scoreInput}
                 value={s2P1}
                 onChangeText={setS2P1}
                 keyboardType="numeric"
+                selectTextOnFocus
               />
               <Text style={styles.setDash}>-</Text>
               <TextInput
@@ -307,18 +314,20 @@ export const MatchesScreen: React.FC<Props> = ({
                 value={s2P2}
                 onChangeText={setS2P2}
                 keyboardType="numeric"
+                selectTextOnFocus
               />
             </View>
 
             {/* Set 3 optionnel */}
             {hasThirdSet && (
               <View style={styles.setRowInput}>
-                <Text style={styles.setLabel}>Set 3 :</Text>
+                <Text style={styles.setLabel}>Set 3</Text>
                 <TextInput
                   style={styles.scoreInput}
                   value={s3P1}
                   onChangeText={setS3P1}
                   keyboardType="numeric"
+                  selectTextOnFocus
                 />
                 <Text style={styles.setDash}>-</Text>
                 <TextInput
@@ -326,6 +335,7 @@ export const MatchesScreen: React.FC<Props> = ({
                   value={s3P2}
                   onChangeText={setS3P2}
                   keyboardType="numeric"
+                  selectTextOnFocus
                 />
               </View>
             )}
@@ -333,25 +343,28 @@ export const MatchesScreen: React.FC<Props> = ({
             <TouchableOpacity
               style={styles.toggleSetBtn}
               onPress={() => setHasThirdSet(!hasThirdSet)}
+              activeOpacity={0.7}
             >
               <Text style={styles.toggleSetText}>
                 {hasThirdSet ? 'Supprimer le 3ème set' : '+ Ajouter un 3ème set décisif'}
               </Text>
             </TouchableOpacity>
 
-            <View style={styles.modalButtons}>
+            <View style={styles.modalButtonsStack}>
               <TouchableOpacity
-                style={styles.cancelBtn}
-                onPress={() => setSelectedMatchForScore(null)}
+                style={styles.primaryBtn}
+                onPress={handleConfirmSubmitScores}
+                activeOpacity={0.8}
               >
-                <Text style={styles.cancelBtnText}>Annuler</Text>
+                <Text style={styles.primaryBtnText}>Envoyer pour validation</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.confirmBtn}
-                onPress={handleConfirmSubmitScores}
+                style={styles.cancelBtn}
+                onPress={() => setSelectedMatchForScore(null)}
+                activeOpacity={0.7}
               >
-                <Text style={styles.confirmBtnText}>Envoyer pour validation</Text>
+                <Text style={styles.cancelBtnText}>Annuler</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -359,88 +372,120 @@ export const MatchesScreen: React.FC<Props> = ({
       </Modal>
 
       {/* Modal Création d'un défi */}
-      <Modal visible={showChallengeModal} transparent animationType="slide">
+      <Modal visible={showChallengeModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <ScrollView contentContainerStyle={styles.challengeModalCard}>
-            <Text style={styles.modalTitle}>Proposer un Défi 🏸</Text>
-            <Text style={styles.modalSubtitle}>
-              Choisissez un adversaire et un créneau commun du club Champibad.
-            </Text>
+          <View style={styles.challengeModalWrapper}>
+            <ScrollView
+              contentContainerStyle={styles.challengeModalCard}
+              showsVerticalScrollIndicator={false}
+            >
+              <Text style={styles.modalTitle}>Proposer un Défi 🏸</Text>
+              <Text style={styles.modalSubtitle}>
+                Choisissez un adversaire et un créneau commun du club Champibad.
+              </Text>
 
-            <Text style={styles.fieldLabel}>Adversaire :</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.playersScroll}>
-              {allPlayers
-                .filter((p) => p.id !== currentUser.id)
-                .map((p) => (
-                  <TouchableOpacity
-                    key={p.id}
-                    style={[
-                      styles.playerChip,
-                      selectedOpponentId === p.id && styles.activePlayerChip,
-                    ]}
-                    onPress={() => {
-                      setSelectedOpponentId(p.id);
-                      SlotService.findCommonSlots(currentUser.id, p.id).then((res) => {
-                        setCommonSlots(res);
-                        if (res.length > 0) setSelectedSlotId(res[0].slot.id);
-                      });
-                    }}
-                  >
-                    <Text
+              <Text style={styles.fieldLabel}>Adversaire</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.playersScrollContainer}
+                style={styles.playersScroll}
+              >
+                {allPlayers
+                  .filter((p) => p.id !== currentUser.id)
+                  .map((p) => {
+                    const isSelected = selectedOpponentId === p.id;
+                    return (
+                      <TouchableOpacity
+                        key={p.id}
+                        style={[
+                          styles.playerChip,
+                          isSelected && styles.activePlayerChip,
+                        ]}
+                        onPress={() => {
+                          setSelectedOpponentId(p.id);
+                          SlotService.findCommonSlots(currentUser.id, p.id).then((res) => {
+                            setCommonSlots(res);
+                            if (res.length > 0) setSelectedSlotId(res[0].slot.id);
+                          });
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={[
+                            styles.chipName,
+                            isSelected && styles.activeChipName,
+                          ]}
+                        >
+                          {p.firstName} {p.lastName}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.chipElo,
+                            isSelected && styles.activeChipElo,
+                          ]}
+                        >
+                          {p.eloSolo} Elo
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+              </ScrollView>
+
+              <Text style={styles.fieldLabel}>Créneau de Badminton suggéré</Text>
+              <View style={styles.slotsBox}>
+                {clubSlots.map((s) => {
+                  const isSelected = selectedSlotId === s.id;
+                  return (
+                    <TouchableOpacity
+                      key={s.id}
                       style={[
-                        styles.chipName,
-                        selectedOpponentId === p.id && styles.activeChipName,
+                        styles.slotChoice,
+                        isSelected && styles.activeSlotChoice,
                       ]}
+                      onPress={() => setSelectedSlotId(s.id)}
+                      activeOpacity={0.7}
                     >
-                      {p.firstName} {p.lastName}
-                    </Text>
-                    <Text style={styles.chipElo}>{p.eloSolo} Elo</Text>
-                  </TouchableOpacity>
-                ))}
-            </ScrollView>
+                      <Text
+                        style={[
+                          styles.slotChoiceTitle,
+                          isSelected && styles.activeSlotChoiceTitle,
+                        ]}
+                      >
+                        {s.dayName} ({s.startTime} - {s.endTime})
+                      </Text>
+                      {s.hasPeakHours && (
+                        <Text style={styles.peakNotice}>
+                          ⚠️ Affluence forte : Défi autorisé après {s.allowedMatchStartTime}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
 
-            <Text style={styles.fieldLabel}>Créneau de Badminton suggéré :</Text>
-            <View style={styles.slotsBox}>
-              {clubSlots.map((s) => (
+              <View style={styles.modalButtonsStack}>
                 <TouchableOpacity
-                  key={s.id}
-                  style={[
-                    styles.slotChoice,
-                    selectedSlotId === s.id && styles.activeSlotChoice,
-                  ]}
-                  onPress={() => setSelectedSlotId(s.id)}
+                  style={styles.primaryBtn}
+                  onPress={handleCreateChallenge}
+                  activeOpacity={0.8}
                 >
-                  <Text style={styles.slotChoiceTitle}>
-                    {s.dayName} ({s.startTime} - {s.endTime})
-                  </Text>
-                  {s.hasPeakHours && (
-                    <Text style={styles.peakNotice}>
-                      ⚠️ Affluence forte : Défi autorisé après {s.allowedMatchStartTime}
-                    </Text>
-                  )}
+                  <Text style={styles.primaryBtnText}>Lancer le défi</Text>
                 </TouchableOpacity>
-              ))}
-            </View>
 
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.cancelBtn}
-                onPress={() => {
-                  setShowChallengeModal(false);
-                  if (onClearTargetOpponent) onClearTargetOpponent();
-                }}
-              >
-                <Text style={styles.cancelBtnText}>Annuler</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.confirmBtn}
-                onPress={handleCreateChallenge}
-              >
-                <Text style={styles.confirmBtnText}>Lancer le défi</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
+                <TouchableOpacity
+                  style={styles.cancelBtn}
+                  onPress={() => {
+                    setShowChallengeModal(false);
+                    if (onClearTargetOpponent) onClearTargetOpponent();
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.cancelBtnText}>Annuler</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
         </View>
       </Modal>
     </View>
@@ -450,76 +495,95 @@ export const MatchesScreen: React.FC<Props> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F2F2F7',
   },
   headerBar: {
-    backgroundColor: '#0F172A',
-    padding: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 10,
   },
-  filtersRow: {
+  segmentedControl: {
+    flex: 1,
     flexDirection: 'row',
-    gap: 6,
+    backgroundColor: '#F2F2F7',
+    borderRadius: 9,
+    padding: 2,
   },
-  filterBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 6,
-    backgroundColor: '#1E293B',
+  segmentBtn: {
+    flex: 1,
+    paddingVertical: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 7,
   },
-  activeFilterBtn: {
-    backgroundColor: '#0284C7',
+  activeSegmentBtn: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  filterText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#94A3B8',
+  segmentText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#8E8E93',
   },
-  activeFilterText: {
-    color: '#FFFFFF',
+  activeSegmentText: {
+    color: '#000000',
+    fontWeight: '600',
   },
   newChallengeBtn: {
-    backgroundColor: '#16A34A',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   newChallengeText: {
     color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '800',
+    fontSize: 13,
+    fontWeight: '600',
   },
   listContent: {
-    padding: 12,
+    padding: 16,
+    paddingBottom: 32,
   },
   emptyContainer: {
     alignItems: 'center',
-    marginTop: 40,
-    padding: 20,
+    justifyContent: 'center',
+    paddingTop: 60,
+    paddingHorizontal: 32,
   },
   emptyIcon: {
-    fontSize: 48,
-    marginBottom: 8,
+    fontSize: 44,
+    marginBottom: 12,
   },
   emptyTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#0F172A',
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#1C1C1E',
+    marginBottom: 6,
   },
   emptySubtitle: {
-    fontSize: 12,
-    color: '#64748B',
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#8E8E93',
     textAlign: 'center',
-    marginTop: 4,
+    lineHeight: 20,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
+    padding: 20,
   },
   scoreModalCard: {
     backgroundColor: '#FFFFFF',
@@ -527,24 +591,41 @@ const styles = StyleSheet.create({
     padding: 20,
     width: '100%',
     maxWidth: 360,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  challengeModalCard: {
+  challengeModalWrapper: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 20,
     width: '100%',
     maxWidth: 400,
+    maxHeight: '85%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+    overflow: 'hidden',
+  },
+  challengeModalCard: {
+    padding: 20,
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#0F172A',
+    fontWeight: '600',
+    color: '#1C1C1E',
     marginBottom: 4,
+    textAlign: 'center',
   },
   modalSubtitle: {
-    fontSize: 12,
-    color: '#64748B',
-    marginBottom: 16,
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#8E8E93',
+    marginBottom: 18,
+    textAlign: 'center',
   },
   setRowInput: {
     flexDirection: 'row',
@@ -554,124 +635,137 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   setLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#334155',
-    width: 50,
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#1C1C1E',
+    width: 48,
   },
   scoreInput: {
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    borderRadius: 8,
+    backgroundColor: '#F2F2F7',
+    borderRadius: 10,
     width: 60,
     height: 44,
     textAlign: 'center',
     fontSize: 18,
-    fontWeight: '800',
-    backgroundColor: '#F8FAFC',
+    fontWeight: '600',
+    color: '#000000',
   },
   setDash: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#94A3B8',
+    fontWeight: '500',
+    color: '#8E8E93',
   },
   toggleSetBtn: {
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 10,
+    marginBottom: 8,
   },
   toggleSetText: {
-    color: '#0284C7',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 16,
-  },
-  cancelBtn: {
-    flex: 1,
-    backgroundColor: '#E2E8F0',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  cancelBtnText: {
-    color: '#475569',
-    fontWeight: '700',
-    fontSize: 12,
-  },
-  confirmBtn: {
-    flex: 2,
-    backgroundColor: '#0284C7',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  confirmBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 12,
+    color: '#007AFF',
+    fontSize: 14,
+    fontWeight: '500',
   },
   fieldLabel: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#1E293B',
-    marginBottom: 8,
-    marginTop: 8,
+    fontWeight: '600',
+    color: '#8E8E93',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 10,
+    marginTop: 6,
   },
   playersScroll: {
-    flexDirection: 'row',
-    marginBottom: 12,
+    marginBottom: 16,
+  },
+  playersScrollContainer: {
+    paddingVertical: 2,
+    gap: 8,
   },
   playerChip: {
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    borderRadius: 10,
-    paddingHorizontal: 12,
+    backgroundColor: '#F2F2F7',
+    borderRadius: 20,
+    paddingHorizontal: 14,
     paddingVertical: 8,
-    marginRight: 8,
     alignItems: 'center',
   },
   activePlayerChip: {
-    borderColor: '#0284C7',
-    backgroundColor: '#E0F2FE',
+    backgroundColor: '#007AFF',
   },
   chipName: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#334155',
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#1C1C1E',
   },
   activeChipName: {
-    color: '#0369A1',
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
   chipElo: {
-    fontSize: 10,
-    color: '#64748B',
+    fontSize: 11,
+    color: '#8E8E93',
+    marginTop: 2,
+  },
+  activeChipElo: {
+    color: 'rgba(255, 255, 255, 0.8)',
   },
   slotsBox: {
-    gap: 6,
-    marginBottom: 12,
+    gap: 8,
+    marginBottom: 20,
   },
   slotChoice: {
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 8,
-    padding: 10,
+    borderColor: '#E5E5EA',
+    borderRadius: 12,
+    padding: 12,
   },
   activeSlotChoice: {
-    borderColor: '#16A34A',
-    backgroundColor: '#F0FDF4',
+    backgroundColor: '#EBF5FF',
+    borderColor: '#007AFF',
   },
   slotChoiceTitle: {
-    fontWeight: '700',
-    fontSize: 12,
-    color: '#0F172A',
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#1C1C1E',
+  },
+  activeSlotChoiceTitle: {
+    color: '#007AFF',
+    fontWeight: '600',
   },
   peakNotice: {
-    fontSize: 10,
-    color: '#DC2626',
+    fontSize: 11,
+    color: '#FF9500',
+    fontWeight: '500',
+    marginTop: 4,
+  },
+  modalButtonsStack: {
+    marginTop: 10,
+  },
+  primaryBtn: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  primaryBtnText: {
+    color: '#FFFFFF',
     fontWeight: '600',
-    marginTop: 2,
+    fontSize: 15,
+  },
+  cancelBtn: {
+    backgroundColor: '#F2F2F7',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    marginTop: 8,
+  },
+  cancelBtnText: {
+    color: '#8E8E93',
+    fontWeight: '600',
+    fontSize: 15,
   },
 });

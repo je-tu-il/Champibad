@@ -86,3 +86,26 @@ Le workflow [`.github/workflows/production.yaml`](.github/workflows/production.y
 
 Pour télécharger vos fichiers de test :
 Rendez-vous dans l'onglet **Actions** de votre dépôt GitHub $\rightarrow$ sélectionnez le dernier run $\rightarrow$ téléchargez les artefacts dans la section **Artifacts**.
+
+---
+
+## 🔍 Validation & Tests Effectués
+
+| Test | Résultat | Notes |
+|---|---|---|
+| `npm run typecheck` | ✅ Validé | 0 erreur de typage TypeScript sous React Native 0.86 / Expo 57 |
+| Scripts de patch | ✅ Validé | `postinstall` avec `patch-xcode-check.js` et `patch-jsi-noexcept.js` |
+| Règles Firestore | ✅ Validé | `firestore.rules` présent et configuré pour le chiffrement E2EE |
+
+---
+
+## 🤖 Guide de Reprise pour une IA
+
+Si vous devez faire évoluer l'application mobile :
+1. **Synchronisation FFBaD (`src/services/ffbadSync.ts`)** :
+   - Vérifier le format du scraper ou de l'API de la fédération de badminton pour maintenir à jour les numéros de licence des adhérents.
+2. **Gestion de Tournois (Format Bracket / Poules)** :
+   - Ajouter un module de génération automatique d'arbres de tournoi à élimination directe ou poules rondes (Round Robin).
+3. **Notifications Push Expo** :
+   - Configurer `expo-notifications` pour prévenir un joueur instantanément lorsqu'un défi lui est lancé ou qu'un score est soumis pour validation.
+

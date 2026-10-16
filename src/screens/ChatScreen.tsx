@@ -88,6 +88,8 @@ export const ChatScreen: React.FC<Props> = ({ currentUser, onUserUpdated }) => {
     onUserUpdated(updated);
   };
 
+  const isSendDisabled = !inputText.trim() || isBlocked;
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -95,7 +97,11 @@ export const ChatScreen: React.FC<Props> = ({ currentUser, onUserUpdated }) => {
     >
       {/* Sélecteur de partenaire / Amis */}
       <View style={styles.contactsBar}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.contactsScroll}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.contactsScroll}
+        >
           {allPlayers.map((p) => {
             const isSelected = p.id === activePartnerId;
             const isFriendContact = currentUser.friends.includes(p.id);
@@ -108,6 +114,7 @@ export const ChatScreen: React.FC<Props> = ({ currentUser, onUserUpdated }) => {
                   isSelected && styles.selectedContactChip,
                 ]}
                 onPress={() => setActivePartnerId(p.id)}
+                activeOpacity={0.7}
               >
                 <Text
                   style={[
@@ -127,7 +134,8 @@ export const ChatScreen: React.FC<Props> = ({ currentUser, onUserUpdated }) => {
       {/* En-tête partenaire simplifié */}
       {activePartner && (
         <View style={styles.partnerHeader}>
-          <Text style={styles.partnerTitle}>
+          <View style={styles.headerSpacer} />
+          <Text style={styles.partnerTitle} numberOfLines={1}>
             {activePartner.firstName}
           </Text>
 
@@ -135,6 +143,8 @@ export const ChatScreen: React.FC<Props> = ({ currentUser, onUserUpdated }) => {
             <TouchableOpacity
               style={[styles.iconBtn, isFriend && styles.iconBtnActive]}
               onPress={handleToggleFriend}
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={[styles.starIcon, isFriend && styles.starIconActive]}>
                 {isFriend ? '★' : '☆'}
@@ -144,6 +154,8 @@ export const ChatScreen: React.FC<Props> = ({ currentUser, onUserUpdated }) => {
             <TouchableOpacity
               style={[styles.iconBtn, isBlocked && styles.blockBtnActive]}
               onPress={handleToggleBlock}
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={styles.blockIcon}>🚫</Text>
             </TouchableOpacity>
@@ -173,7 +185,12 @@ export const ChatScreen: React.FC<Props> = ({ currentUser, onUserUpdated }) => {
               >
                 {item.text}
               </Text>
-              <Text style={styles.messageTime}>
+              <Text
+                style={[
+                  styles.messageTime,
+                  isMine ? styles.myMessageTime : styles.theirMessageTime,
+                ]}
+              >
                 {new Date(item.message.createdAt).toLocaleTimeString([], {
                   hour: '2-digit',
                   minute: '2-digit',
@@ -189,17 +206,20 @@ export const ChatScreen: React.FC<Props> = ({ currentUser, onUserUpdated }) => {
         <TextInput
           style={styles.messageInput}
           placeholder={isBlocked ? 'Utilisateur bloqué' : 'Votre message privé...'}
-          placeholderTextColor="#94A3B8"
+          placeholderTextColor="#8E8E93"
           value={inputText}
           onChangeText={setInputText}
           editable={!isBlocked}
         />
         <TouchableOpacity
-          style={[styles.sendBtn, (!inputText.trim() || isBlocked) && styles.sendBtnDisabled]}
-          disabled={!inputText.trim() || isBlocked}
+          style={[styles.sendBtn, isSendDisabled && styles.sendBtnDisabled]}
+          disabled={isSendDisabled}
           onPress={handleSendMessage}
+          activeOpacity={0.8}
         >
-          <Text style={styles.sendBtnText}>Envoyer</Text>
+          <Text style={[styles.sendBtnText, isSendDisabled && styles.sendBtnTextDisabled]}>
+            ↑
+          </Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -209,34 +229,35 @@ export const ChatScreen: React.FC<Props> = ({ currentUser, onUserUpdated }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
   },
   contactsBar: {
-    backgroundColor: '#0F172A',
+    backgroundColor: '#FFFFFF',
     paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
   },
   contactsScroll: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     gap: 8,
   },
   contactChip: {
-    backgroundColor: '#1E293B',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    backgroundColor: '#F2F2F7',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 16,
   },
   selectedContactChip: {
-    backgroundColor: '#0284C7',
+    backgroundColor: '#007AFF',
   },
   contactName: {
-    color: '#94A3B8',
-    fontSize: 12,
-    fontWeight: '700',
+    color: '#000000',
+    fontSize: 13,
+    fontWeight: '500',
   },
   selectedContactName: {
     color: '#FFFFFF',
+    fontWeight: '600',
   },
   partnerHeader: {
     flexDirection: 'row',
@@ -245,114 +266,131 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  headerSpacer: {
+    width: 64,
   },
   partnerTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#0F172A',
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000000',
   },
   partnerActions: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-end',
     gap: 8,
+    width: 64,
   },
   iconBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F1F5F9',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F2F2F7',
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconBtnActive: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: '#FFFBEB',
   },
   blockBtnActive: {
     backgroundColor: '#FEE2E2',
   },
   starIcon: {
-    fontSize: 16,
-    color: '#94A3B8',
+    fontSize: 14,
+    color: '#8E8E93',
+    lineHeight: 16,
   },
   starIconActive: {
-    color: '#D97706',
+    color: '#FF9500',
   },
   blockIcon: {
-    fontSize: 14,
+    fontSize: 12,
   },
   messagesList: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     flexGrow: 1,
+    backgroundColor: '#FFFFFF',
   },
   messageBubble: {
-    maxWidth: '80%',
-    padding: 12,
-    borderRadius: 14,
+    maxWidth: '75%',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 18,
     marginBottom: 8,
   },
   myMessage: {
     alignSelf: 'flex-end',
-    backgroundColor: '#0284C7',
-    borderBottomRightRadius: 2,
+    backgroundColor: '#007AFF',
   },
   theirMessage: {
     alignSelf: 'flex-start',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderBottomLeftRadius: 2,
+    backgroundColor: '#F2F2F7',
   },
   messageText: {
-    fontSize: 14,
-    lineHeight: 18,
+    fontSize: 15,
+    lineHeight: 20,
   },
   myMessageText: {
     color: '#FFFFFF',
   },
   theirMessageText: {
-    color: '#0F172A',
+    color: '#000000',
   },
   messageTime: {
-    fontSize: 9,
-    color: '#94A3B8',
+    fontSize: 10,
+    color: '#8E8E93',
     alignSelf: 'flex-end',
     marginTop: 4,
+  },
+  myMessageTime: {
+    color: 'rgba(255, 255, 255, 0.7)',
+  },
+  theirMessageTime: {
+    color: '#8E8E93',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingVertical: 8,
     backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
-    gap: 8,
+    borderTopWidth: 0.5,
+    borderTopColor: 'rgba(0, 0, 0, 0.1)',
+    gap: 10,
   },
   messageInput: {
     flex: 1,
-    backgroundColor: '#F1F5F9',
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    fontSize: 14,
-    color: '#0F172A',
+    backgroundColor: '#F2F2F7',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    fontSize: 15,
+    color: '#000000',
   },
   sendBtn: {
-    backgroundColor: '#0284C7',
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 18,
-    justifyContent: 'center',
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#007AFF',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   sendBtnDisabled: {
-    backgroundColor: '#94A3B8',
+    backgroundColor: '#E5E5EA',
   },
   sendBtnText: {
     color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 13,
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: -1,
+  },
+  sendBtnTextDisabled: {
+    color: '#8E8E93',
   },
 });

@@ -11,7 +11,7 @@ interface Props {
 export const Header: React.FC<Props> = ({ currentUser, onLogout }) => {
   return (
     <View style={styles.container}>
-      <Text style={styles.brandTitle}>🏸 Champibad</Text>
+      <Text style={styles.brandTitle}>Champibad</Text>
 
       {currentUser && (
         <View style={styles.userSection}>
@@ -32,20 +32,20 @@ export const Header: React.FC<Props> = ({ currentUser, onLogout }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#0F172A',
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   brandTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#38BDF8',
-    letterSpacing: 0.3,
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#000000',
+    letterSpacing: -0.4,
   },
   userSection: {
     flexDirection: 'row',
@@ -53,21 +53,22 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   userName: {
-    color: '#94A3B8',
-    fontSize: 13,
-    fontWeight: '600',
+    color: '#8E8E93',
+    fontSize: 14,
+    fontWeight: '400',
   },
   logoutBtn: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: '#1E293B',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F2F2F7',
     alignItems: 'center',
     justifyContent: 'center',
   },
   logoutIcon: {
-    color: '#94A3B8',
-    fontSize: 12,
-    fontWeight: '700',
+    color: '#8E8E93',
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: -1,
   },
 });

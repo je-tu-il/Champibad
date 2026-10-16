@@ -73,8 +73,8 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <View style={styles.header}>
         <Text style={styles.logo}>🏸</Text>
-        <Text style={styles.title}>CHAMPIBAD</Text>
-        <Text style={styles.desc}>Classement interne du club</Text>
+        <Text style={styles.title}>Champibad</Text>
+        <Text style={styles.subtitle}>Classement interne du club</Text>
       </View>
 
       <View style={styles.card}>
@@ -84,7 +84,7 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
         <TextInput
           style={styles.input}
           placeholder="ex: Aurélien"
-          placeholderTextColor="#94A3B8"
+          placeholderTextColor="#8E8E93"
           value={firstName}
           onChangeText={setFirstName}
         />
@@ -93,7 +93,7 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
         <TextInput
           style={styles.input}
           placeholder="ex: Reymond"
-          placeholderTextColor="#94A3B8"
+          placeholderTextColor="#8E8E93"
           value={lastName}
           onChangeText={setLastName}
         />
@@ -102,7 +102,7 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
         <TextInput
           style={styles.input}
           placeholder="ex: 07123456"
-          placeholderTextColor="#94A3B8"
+          placeholderTextColor="#8E8E93"
           value={licenseNumber}
           onChangeText={setLicenseNumber}
           keyboardType="numeric"
@@ -135,7 +135,7 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
               })
             }
           >
-            <Text style={styles.quickBtnText}>🛡️ Admin</Text>
+            <Text style={styles.quickBtnText}>Admin</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -149,7 +149,7 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
               })
             }
           >
-            <Text style={styles.quickBtnText}>👤 Joueur</Text>
+            <Text style={styles.quickBtnText}>Joueur</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -160,100 +160,100 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#FFFFFF',
     padding: 20,
     justifyContent: 'center',
   },
   header: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 28,
   },
   logo: {
-    fontSize: 54,
-    marginBottom: 8,
+    fontSize: 60,
+    textAlign: 'center',
+    marginBottom: 10,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: '#38BDF8',
-    letterSpacing: 1,
-  },
-  desc: {
-    fontSize: 13,
-    color: '#94A3B8',
+    fontSize: 32,
+    fontWeight: '600',
+    color: '#000000',
     textAlign: 'center',
-    marginTop: 6,
+    letterSpacing: 0.35,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: '#8E8E93',
+    textAlign: 'center',
+    marginTop: 8,
   },
   card: {
-    backgroundColor: '#1E293B',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#334155',
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
   },
   cardTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#F8FAFC',
-    marginBottom: 12,
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#000000',
+    marginBottom: 16,
   },
   inputLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#CBD5E1',
+    fontSize: 13,
+    color: '#8E8E93',
     marginBottom: 4,
-    marginTop: 10,
+    marginTop: 12,
   },
   input: {
-    backgroundColor: '#0F172A',
-    borderWidth: 1,
-    borderColor: '#334155',
+    backgroundColor: '#F2F2F7',
     borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: '#F8FAFC',
-    fontSize: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: '#000000',
   },
   primaryButton: {
-    backgroundColor: '#0284C7',
-    paddingVertical: 14,
-    borderRadius: 10,
+    backgroundColor: '#007AFF',
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 24,
   },
   buttonDisabled: {
-    opacity: 0.6,
+    opacity: 0.5,
   },
   primaryButtonText: {
     color: '#FFFFFF',
-    fontWeight: '800',
-    fontSize: 15,
+    fontWeight: '600',
+    fontSize: 16,
   },
   quickLoginContainer: {
-    marginTop: 24,
+    marginTop: 28,
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
   quickLoginTitle: {
-    color: '#64748B',
-    fontSize: 11,
-    fontWeight: '600',
+    color: '#8E8E93',
+    fontSize: 12,
+    fontWeight: '500',
   },
   quickRow: {
     flexDirection: 'row',
     gap: 12,
   },
   quickBtn: {
-    backgroundColor: '#1E293B',
-    borderWidth: 1,
-    borderColor: '#334155',
+    backgroundColor: '#F2F2F7',
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,
   },
   quickBtnText: {
-    color: '#94A3B8',
+    color: '#8E8E93',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
   },
 });
