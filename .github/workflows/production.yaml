@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 jobs:
@@ -139,3 +141,51 @@ jobs:
           path: Champibad-unsigned.ipa
           if-no-files-found: error
           retention-days: 14
+
+
+  release:
+    name: 🚀 Publication de la Release (APK & IPA)
+    needs: [build-android, build-ios]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - name: 📥 Download Android APK
+        uses: actions/download-artifact@v4
+        with:
+          name: champibad-android-debug-apk
+          path: release-files
+
+      - name: 📥 Download iOS IPA
+        uses: actions/download-artifact@v4
+        with:
+          name: champibad-ios-unsigned-ipa
+          path: release-files
+
+      - name: 🏷️ Determine Tag
+        id: vars
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=v1.0.0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🚀 Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.vars.outputs.tag }}
+          name: "Champibad ${{ steps.vars.outputs.tag }}"
+          body: |
+            ## 🏸 Téléchargements officiels Champibad
+
+            - 🤖 **Android APK** : `app-debug.apk` (téléchargez et installez directement sur votre téléphone Android)
+            - 🍏 **iOS IPA** : `Champibad-unsigned.ipa` (à installer via AltStore, SideStore, Sideloadly ou TrollStore)
+          files: |
+            release-files/*.apk
+            release-files/*.ipa
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

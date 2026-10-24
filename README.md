@@ -1,10 +1,30 @@
 # 🏸 Champibad — Plateforme Interne de Compétition (Club Champibad)
 
-Application mobile officielle de compétition interne et de classement Elo pour le club de badminton **Champibad** à **Champigneulles**.
+[![Release](https://img.shields.io/github/v/release/je-tu-il/Champibad?color=blue&label=Version)](https://github.com/je-tu-il/Champibad/releases/latest)
+[![Production Build](https://github.com/je-tu-il/Champibad/actions/workflows/production.yaml/badge.svg)](https://github.com/je-tu-il/Champibad/actions/workflows/production.yaml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Platforms](https://img.shields.io/badge/Plateformes-Android%20%7C%20iOS%20(Expo%20SDK%2057)-orange.svg)](https://github.com/je-tu-il/Champibad/releases/latest)
 
-Conçue avec **React Native / Expo SDK** (TypeScript) et **Firebase**, optimisée pour iPhone et Samsung / Android avec compilation automatisée via GitHub Actions.
+> **Application mobile officielle** de compétition interne et de classement Elo pour le club de badminton **Champibad** à **Champigneulles**.
 
 ---
+
+## 📲 Téléchargement Direct & Installation (Pour les Joueurs)
+
+Pour installer l'application directement sur votre smartphone sans passer par les stores :
+
+1. Rendez-vous sur la page des [**Dernières Versions (Releases)**](https://github.com/je-tu-il/Champibad/releases/latest).
+2. **Pour Android (Samsung, Xiaomi, Google Pixel, etc.)** :
+   - Téléchargez le fichier `app-debug.apk`.
+   - Ouvrez le fichier téléchargé sur votre smartphone.
+   - Si Android affiche *"Source inconnue"*, cliquez sur **Paramètres** puis **Autoriser cette source**.
+   - Cliquez sur **Installer**. L'application Champibad est prête !
+3. **Pour iPhone / iPad (iOS)** :
+   - Téléchargez `Champibad-unsigned.ipa`.
+   - Installez-le en quelques secondes avec votre outil préféré : [AltStore](https://altstore.io/), [SideStore](https://sidestore.io/), ou [Sideloadly](https://sideloadly.io/).
+
+---
+
 
 ## 🌟 Fonctionnalités Clés
 
