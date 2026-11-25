@@ -24,6 +24,7 @@ import { PlayerProfileModal } from './src/components/PlayerProfileModal';
 type TabKey = 'LEADERBOARD' | 'MATCHES' | 'SLOTS' | 'CHAT' | 'ADMIN';
 
 export default function App() {
+  const [welcome, setWelcome] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<Player | null>(null);
   const [currentTab, setCurrentTab] = useState<TabKey>('LEADERBOARD');
   const [targetOpponentForChallenge, setTargetOpponentForChallenge] = useState<Player | null>(null);
@@ -62,6 +63,7 @@ export default function App() {
           setShowProfileModal(false);
           setSelectedProfilePlayer(null);
           await AuthService.logout();
+          setWelcome(null);
           setCurrentUser(null);
           setCurrentTab('LEADERBOARD');
         },
@@ -94,6 +96,7 @@ export default function App() {
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
         <AuthScreen
           onLoginSuccess={(player) => {
+            setWelcome(player.firstName);
             setCurrentUser(player);
             loadMatches(player.id);
           }}
@@ -104,6 +107,16 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      {welcome && (
+        <TouchableOpacity
+          onPress={() => setWelcome(null)}
+          accessibilityRole="button"
+          accessibilityLabel={`Bienvenue ${welcome}. Fermer le message.`}
+          style={{ backgroundColor: '#E2F4EA', paddingHorizontal: 16, paddingVertical: 12 }}
+        >
+          <Text style={{ color: '#174D36', fontWeight: '600' }}>Bienvenue {welcome} !</Text>
+        </TouchableOpacity>
+      )}
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* En-tête épuré avec profil cliquable (sans croix de déconnexion) */}
@@ -241,7 +254,7 @@ const styles = StyleSheet.create({
   },
   screenContent: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#EDF4F0',
   },
   bottomTabBar: {
     flexDirection: 'row',

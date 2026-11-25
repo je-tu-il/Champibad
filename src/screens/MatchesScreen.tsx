@@ -593,7 +593,6 @@ export const MatchesScreen: React.FC<Props> = ({
                     </View>
 
                     <Text style={styles.intelligentSummary}>{evalData.summary}</Text>
-                    <Text style={styles.intelligentDetails}>{evalData.details}</Text>
 
                     <View style={styles.serverRow}>
                       <Text style={styles.serverLabel}>Premier serveur désigné :</Text>

@@ -107,7 +107,7 @@ export const PlayerProfileModal: React.FC<Props> = ({
             </TouchableOpacity>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
             {/* Avatar & Identité */}
             <View style={styles.heroSection}>
               <View style={styles.avatarBubble}>
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '90%',
+    height: '90%',
     paddingBottom: 24,
   },
   sheetHeader: {

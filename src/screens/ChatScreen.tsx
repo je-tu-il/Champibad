@@ -294,8 +294,6 @@ export const ChatScreen: React.FC<Props> = ({ currentUser, onUserUpdated, onPres
           {/* Sélecteur de partenaire / Amis */}
           <View style={styles.contactsBar}>
             <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.contactsScroll}
             >
               {allPlayers.map((p) => {
@@ -596,6 +594,7 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
   },
   contactsBar: {
+    maxHeight: 132,
     backgroundColor: '#FFFFFF',
     paddingVertical: 10,
     borderBottomWidth: 0.5,
@@ -608,7 +607,8 @@ const styles = StyleSheet.create({
   contactChip: {
     backgroundColor: '#F2F2F7',
     paddingHorizontal: 14,
-    paddingVertical: 7,
+    minHeight: 44,
+    justifyContent: 'center',
     borderRadius: 16,
   },
   selectedContactChip: {

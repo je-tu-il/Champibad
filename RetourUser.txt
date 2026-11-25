@@ -1,0 +1,21 @@
+# Champibad — tâches issues du retour utilisateur
+
+## Inscription et données du club
+- [ ] Afficher l’autocomplétion du prénom et du nom dès le début de l’inscription.
+- [ ] Vérifier la provenance du jeu de licenciés déjà intégré et fournir la liste des adhérents et leurs numéros de licence après vérification.
+- [ ] Vérifier si la source de données permet d’associer une adresse e-mail au numéro de licence.
+- [ ] Envoyer un code par e-mail et vérifier le profil après saisie du code.
+- [ ] Vérifier la disponibilité d’un classement officiel à jour et définir sa conversion en Élo initial.
+
+## Interface
+- [ ] Afficher « Connexion réussie, bienvenue [prénom] » dans l’interface.
+- [ ] Donner un fond identifiable à l’application et vérifier les contrastes.
+- [x] Présenter les contacts du chat privé en colonne.
+- [ ] Résumer l’équilibrage intelligent à l’avantage ou au désavantage de chaque joueur.
+- [ ] Corriger la modale de profil pour afficher le profil complet.
+- [ ] Permettre d’ajouter une photo de profil et la compresser avant l’envoi.
+
+Le parseur MyFFBaD récupère un classement, mais construit les e-mails à partir des noms. Ces adresses doivent être confirmées avant de servir à un envoi.
+
+## Modifications à valider
+L’autoremplissage des noms par le système, le message d’accueil intégré, le profil défilant et le résumé du handicap sont implémentés. La vérification par code dépend d’une source d’adresses confirmées et d’un service d’envoi.

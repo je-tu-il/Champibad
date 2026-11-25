@@ -39,7 +39,6 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
         licenseNumber.trim(),
         email
       );
-      Alert.alert('Connexion réussie', `Bienvenue ${player.firstName} !`);
       onLoginSuccess(player);
     } catch (e: any) {
       Alert.alert('Échec de validation', e.message || 'Erreur lors de la vérification de la licence');
@@ -90,6 +89,7 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
           style={styles.input}
           placeholder="ex: Thomas"
           placeholderTextColor="#8E8E93"
+          autoComplete="given-name"
           value={firstName}
           onChangeText={setFirstName}
         />
@@ -99,6 +99,7 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
           style={styles.input}
           placeholder="ex: Dubois"
           placeholderTextColor="#8E8E93"
+          autoComplete="family-name"
           value={lastName}
           onChangeText={setLastName}
         />
