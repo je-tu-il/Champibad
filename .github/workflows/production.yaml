@@ -116,13 +116,18 @@ jobs:
 
       - name: 🔍 Verify Workspace Exists
         run: |
-          test -d ios/Champibad.xcworkspace || (echo "Error: Champibad.xcworkspace was not generated" && exit 1)
+          WORKSPACE=$(find ios -maxdepth 1 -name "*.xcworkspace" | head -n 1)
+          test -n "$WORKSPACE" || (echo "Error: .xcworkspace was not generated" && exit 1)
+          echo "Found workspace: $WORKSPACE"
 
       - name: 🔨 Compile Unsigned iOS App & Package IPA
         run: |
           cd ios
-          xcodebuild -workspace Champibad.xcworkspace \
-            -scheme Champibad \
+          WORKSPACE=$(find . -maxdepth 1 -name "*.xcworkspace" | head -n 1)
+          SCHEME=$(xcodebuild -workspace "$WORKSPACE" -list -json | jq -r '.workspace.schemes[0]')
+          echo "Building workspace=$WORKSPACE scheme=$SCHEME"
+          xcodebuild -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
             -configuration Release \
             -sdk iphoneos \
             -derivedDataPath build \
@@ -133,7 +138,7 @@ jobs:
             clean build
 
           mkdir -p Payload
-          cp -r build/Build/Products/Release-iphoneos/Champibad.app Payload/
+          cp -r build/Build/Products/Release-iphoneos/*.app Payload/
           zip -r ../Champibad-unsigned.ipa Payload
           cd ..
 
