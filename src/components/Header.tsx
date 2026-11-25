@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Player } from '../types';
 
 interface Props {
@@ -12,7 +12,14 @@ interface Props {
 export const Header: React.FC<Props> = ({ currentUser, onPressProfile }) => {
   return (
     <View style={styles.container}>
-      <Text style={styles.brandTitle}>Champibad</Text>
+      <View style={styles.brandRow}>
+        <Image
+          source={require('../../assets/icon.png')}
+          style={styles.brandLogo}
+          accessibilityLabel="Logo ChampiBAD"
+        />
+        <Text style={styles.brandTitle}>ChampiBAD</Text>
+      </View>
 
       {currentUser && (
         <TouchableOpacity
@@ -41,10 +48,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  brandLogo: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+  },
   brandTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#000000',
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0F172A',
     letterSpacing: -0.4,
   },
   userSection: {

@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { AuthService } from '../services/authService';
 import { Player } from '../types';
@@ -72,8 +73,12 @@ export const AuthScreen: React.FC<Props> = ({ onLoginSuccess }) => {
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <View style={styles.header}>
-        <Text style={styles.logo}>🏸</Text>
-        <Text style={styles.title}>Champibad</Text>
+        <Image
+          source={require('../../assets/icon.png')}
+          style={styles.logoImg}
+          accessibilityLabel="Logo ChampiBAD"
+        />
+        <Text style={styles.title}>ChampiBAD</Text>
         <Text style={styles.subtitle}>Classement interne du club</Text>
       </View>
 
@@ -153,6 +158,12 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: 28,
+  },
+  logoImg: {
+    width: 84,
+    height: 84,
+    borderRadius: 22,
+    marginBottom: 14,
   },
   logo: {
     fontSize: 60,
