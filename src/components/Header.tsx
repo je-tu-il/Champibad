@@ -39,7 +39,7 @@ export const Header: React.FC<Props> = ({ currentUser, onPressProfile }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFFAF0',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: 0.5,
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
   brandTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#212723',
     letterSpacing: -0.4,
   },
   userSection: {
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     paddingHorizontal: 8,
     borderRadius: 16,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#E5E6D3',
   },
   avatarMini: {
     width: 22,
@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   userName: {
-    color: '#000000',
+    color: '#212723',
     fontSize: 14,
     fontWeight: '500',
   },

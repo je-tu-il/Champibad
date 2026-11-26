@@ -250,15 +250,15 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFFAF0',
   },
   screenContent: {
     flex: 1,
-    backgroundColor: '#EDF4F0',
+    backgroundColor: '#EFEADD',
   },
   bottomTabBar: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFFAF0',
     borderTopWidth: 0.5,
     borderTopColor: 'rgba(0, 0, 0, 0.1)',
     paddingBottom: 8,
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
   },
   activeTabLabel: {
-    color: '#007AFF',
+    color: '#315E79',
     fontWeight: '600',
   },
 });
