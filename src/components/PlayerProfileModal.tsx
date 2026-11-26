@@ -26,7 +26,12 @@ interface Props {
 
 const AVAILABLE_AVATARS = ['🏸', '⚡', '🔥', '🏆', '🦁', '🎯', '🚀', '🥇', '👑', '🦅'];
 
-export const PlayerProfileModal: React.FC<Props> = ({
+export const PlayerProfileModal: React.FC<Props> = (props) => {
+  if (!props.visible || !props.player) return null;
+  return <PlayerProfileContent key={props.player.id} {...props} player={props.player} />;
+};
+
+const PlayerProfileContent: React.FC<Omit<Props, 'player'> & { player: Player }> = ({
   visible,
   player,
   currentUser,
@@ -37,8 +42,6 @@ export const PlayerProfileModal: React.FC<Props> = ({
   onSendMessage,
   onProfileUpdated,
 }) => {
-  if (!player) return null;
-
   const isSelf = player.id === currentUser.id;
 
   const [editing, setEditing] = useState(false);
